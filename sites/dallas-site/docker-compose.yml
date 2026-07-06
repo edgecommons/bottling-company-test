@@ -1,0 +1,91 @@
+# ============================================================================
+# SITE: dallas — one container per edge DEVICE (bare-metal style; every edgecommons component
+# runs as a supervised process inside its device's container, against that container's own
+# in-process EMQX broker).
+#
+#   dallas-site           site node    : EMQX site bus + edge-console (self-served UI :8443)
+#   dallas-filling-line   gw-fill-01    : EMQX + 2 field sims + opcua/modbus/telemetry/
+#                                         file-replicator/uns-bridge  (FULLY self-contained)
+#   dallas-packaging-line gw-pack-01    : EMQX + opcua(KepWare)/modbus(host)/uns-bridge
+#                                         (EXTERNAL PLCs; no sims)
+#
+# Every service name / container is prefixed `dallas-` so a second site (chantilly-*) added as
+# another top-level include won't collide. Paths here are relative to THIS file's directory
+# (sites/dallas-site/), so the file also runs standalone:
+#     docker compose -f sites/dallas-site/docker-compose.yml up -d --build
+# It is normally driven from ../../docker-compose.yml via `include:`.
+# ============================================================================
+
+# Both line devices share ONE image (edge-node); DRY the build via an anchor. compose builds it
+# once for the shared image tag; the two containers differ only by their bind-mounted
+# supervisord conf + configs.
+x-edge-node-build: &edge-node-build
+  context: ../../..
+  dockerfile: bottling-company-test/dockerfiles/edge-node.Dockerfile
+
+services:
+  # -------------------------------------------------- SITE NODE: bus + console ----------
+  dallas-site:
+    build:
+      context: ../../..
+      dockerfile: bottling-company-test/dockerfiles/site.Dockerfile
+    image: bottling-company-test/site:latest
+    container_name: dallas-site
+    hostname: dallas-site
+    volumes:
+      - ./configs/site:/config:ro
+      - ./supervisor/site.conf:/etc/supervisor/supervisord.conf:ro
+    ports:
+      - "${CONSOLE_PORT:-8080}:8443"          # edge-console UI + WS (self-served, no nginx)
+      - "${SITE_BROKER_PORT:-18830}:1883"     # site EMQX (MQTTX/debug; internal port is 1883)
+      - "${SITE_DASHBOARD_PORT:-18084}:18083" # site EMQX dashboard (remapped off 18083 — the
+                                              # standing edgecommons-emqx already publishes 18083)
+    healthcheck:
+      test: ["CMD", "node", "-e",
+             "require('http').get('http://127.0.0.1:8443/healthz',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 40s
+    restart: unless-stopped
+
+  # ---------------------------------------- FILLING LINE (gw-fill-01) — self-contained --
+  dallas-filling-line:
+    build: *edge-node-build
+    image: bottling-company-test/edge-node:latest
+    container_name: dallas-filling-line
+    hostname: dallas-filling-line
+    depends_on:
+      - dallas-site
+    volumes:
+      - ./configs/filling-line:/config:ro
+      - ./configs/lua:/scripts:ro
+      - ./supervisor/filling-line.conf:/etc/supervisor/supervisord.conf:ro
+      - ../../replicated-output:/mnt/replicated   # file-replicator egress -> host
+    ports:
+      - "${FILL_BROKER_PORT:-18831}:1883"         # filling-line EMQX (MQTTX/debug)
+    restart: unless-stopped
+
+  # ------------------------------------- PACKAGING LINE (gw-pack-01) — external PLCs -----
+  dallas-packaging-line:
+    build: *edge-node-build
+    image: bottling-company-test/edge-node:latest
+    container_name: dallas-packaging-line
+    hostname: dallas-packaging-line
+    depends_on:
+      - dallas-site
+    volumes:
+      - ./configs/packaging-line:/config:ro
+      - ./supervisor/packaging-line.conf:/etc/supervisor/supervisord.conf:ro
+    environment:
+      # External field sources, injected into the config templates at process start (.env-driven).
+      KEPWARE_ENDPOINT: "${KEPWARE_ENDPOINT:-opc.tcp://192.168.1.180:49320}"
+      KEPWARE_USER: "${KEPWARE_USER:-testuser}"
+      KEPWARE_PASS: "${KEPWARE_PASS:-CHANGE_ME}"
+      HOST_MODBUS: "${HOST_MODBUS:-192.168.1.224:5020}"
+    extra_hosts:
+      # So KEPWARE_ENDPOINT / HOST_MODBUS may point at host.docker.internal for on-host sources.
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${PACK_BROKER_PORT:-18832}:1883"         # packaging-line EMQX (MQTTX/debug)
+    restart: unless-stopped

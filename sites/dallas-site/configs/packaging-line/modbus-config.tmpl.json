@@ -1,0 +1,34 @@
+{
+  "hierarchy": { "levels": ["site", "line", "device"] },
+  "identity": { "site": "dallas", "line": "packaging" },
+  "tags": { "appId": "bottling-plant" },
+  "logging": { "level": "INFO" },
+  "heartbeat": { "enabled": true, "intervalSecs": 5, "measures": { "cpu": true, "memory": true } },
+  "metricEmission": { "target": "messaging" },
+  "component": {
+    "global": {
+      "defaults": { "pollIntervalMs": 500, "publishMode": "always", "batchMs": 0, "maxGap": 4 }
+    },
+    "instances": [
+      {
+        "id": "casepacker1",
+        "connection": { "transport": "tcp", "host": "__MODBUS_HOST__", "port": __MODBUS_PORT__, "unitId": 1, "timeoutMs": 1000 },
+        "publish": { "batchMs": 0 },
+        "write": { "enabled": false },
+        "pollGroups": [
+          {
+            "id": "main",
+            "pollIntervalMs": 500,
+            "publishMode": "always",
+            "signals": [
+              { "name": "CaseCount",  "table": "input",    "address": 0, "type": "uint16" },
+              { "name": "JamStatus",  "table": "discrete", "address": 0, "type": "bool" },
+              { "name": "RunCommand", "table": "coil",     "address": 0, "type": "bool" }
+            ]
+          }
+        ]
+      }
+    ],
+    "token": "modbus-adapter"
+  }
+}

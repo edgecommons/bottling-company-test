@@ -1,0 +1,73 @@
+{
+  "hierarchy": {
+    "levels": [
+      "site",
+      "line",
+      "device"
+    ]
+  },
+  "identity": {
+    "site": "dallas",
+    "line": "packaging"
+  },
+  "tags": {
+    "appId": "bottling-plant"
+  },
+  "logging": {
+    "level": "INFO"
+  },
+  "heartbeat": {
+    "enabled": true,
+    "intervalSecs": 5,
+    "measures": {
+      "cpu": true,
+      "memory": true
+    }
+  },
+  "metricEmission": {
+    "target": "messaging",
+    "targetConfig": {
+      "destination": "local"
+    }
+  },
+  "component": {
+    "global": {
+      "defaults": {
+        "publishIntervalMs": 500,
+        "samplingRateMs": 200,
+        "queueSize": 20
+      }
+    },
+    "instances": [
+      {
+        "id": "palletizer1",
+        "connection": {
+          "endpoint": "__KEPWARE_ENDPOINT__",
+          "securityPolicy": "None",
+          "user": {
+            "username": "__KEPWARE_USER__",
+            "password": "__KEPWARE_PASS__"
+          }
+        },
+        "publish": {
+          "batchMs": 0
+        },
+        "subscriptions": [
+          {
+            "id": "live",
+            "include": [
+              {
+                "namespaceUri": "Kepware Server",
+                "match": "^EdgeCommonsTest\\.Device1\\.Live.*",
+                "samplingRateMs": 200,
+                "queueSize": 20
+              }
+            ],
+            "exclude": []
+          }
+        ]
+      }
+    ],
+    "token": "opcua-adapter"
+  }
+}

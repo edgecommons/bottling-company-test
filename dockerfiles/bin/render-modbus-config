@@ -1,0 +1,19 @@
+#!/bin/bash
+# render-modbus-config — fill the packaging-line Modbus config template from the external
+# host:port knob, in-container, just before the adapter starts. The single HOST_MODBUS knob
+# (host:port) is split into the template's separate host (string) + port (unquoted JSON number)
+# fields here. Baked as a script so the '%'/'#' shell parameter expansions never appear in the
+# supervisord command line (supervisord would try to expand '%').
+#
+# Usage:  render-modbus-config <template.json> <output.json> <host:port>
+set -euo pipefail
+
+tmpl="$1"; out="$2"; hostport="$3"
+host="${hostport%:*}"
+port="${hostport##*:}"
+mkdir -p "$(dirname "$out")"
+sed \
+  -e "s|__MODBUS_HOST__|${host}|g" \
+  -e "s|__MODBUS_PORT__|${port}|g" \
+  "$tmpl" > "$out"
+echo "[render-modbus-config] wrote ${out} (host=${host} port=${port})"

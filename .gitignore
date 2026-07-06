@@ -1,0 +1,16 @@
+# Local environment overrides. Use .env.example as the committed template.
+.env
+
+# Runtime output from file-replicator and local experiments.
+replicated-output/*
+!replicated-output/.gitkeep
+out/
+logs/
+*.log
+
+# Local/editor/OS noise.
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+

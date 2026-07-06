@@ -1,0 +1,8 @@
+{
+  "name": "@edgecommons/streamlog-node",
+  "version": "0.0.0-bottling-stub",
+  "description": "Type-only stub for the unpublished native streaming addon, so the edgecommons TS lib compiles inside the bottling-company-test site (console) image. The edge-console never uses streaming; this is never loaded at runtime.",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "license": "Apache-2.0"
+}

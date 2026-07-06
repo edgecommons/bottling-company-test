@@ -1,0 +1,62 @@
+# Canonical ignore content for the bottling-company-test images.
+#
+# BUILD CONTEXT = the edgecommons umbrella root (compose sets build.context: ../../..)
+# so each image can COPY from the unpublished sibling core/libs/* next to its
+# own component repo.
+#
+# HOW THIS TAKES EFFECT: Docker/BuildKit resolves the ignore file for a build as
+# "<dockerfile-path>.dockerignore" first, then falls back to "<context>/.dockerignore".
+# Because compose points each service at bottling-company-test/dockerfiles/<img>.Dockerfile,
+# an identical copy of THIS file is shipped next to each Dockerfile as
+# bottling-company-test/dockerfiles/<img>.Dockerfile.dockerignore (generated from this one),
+# so the ignore rules apply WITHOUT placing anything in the umbrella root. (Patterns are
+# matched relative to the build-context root regardless of where the ignore file lives.)
+# See README "Build context & .dockerignore".
+#
+# If you prefer a single file, copy this to edgecommons/.dockerignore instead and delete the
+# per-Dockerfile copies — but that writes into the umbrella root.
+
+# Rust build output (all repos) — huge. (A Rust build `target/` sits at a crate ROOT.)
+**/target/
+# ...but the edgecommons TS lib has SOURCE directories literally named `target/` (the
+# metric-emission targets log/messaging/prometheus/cloudwatch under src/metrics/target).
+# Those live under a `src/` tree, so re-include any `target/` nested under `src/` — a Rust
+# build `target/` never is. Without this the console TS build fails with TS2307 "Cannot find
+# module './target'". (Last-matching pattern wins in a .dockerignore, so this re-includes
+# only src-nested target dirs; crate-root Rust target dirs stay excluded.)
+!**/src/**/target/
+!**/src/**/target/**
+
+# Node build output / deps — huge
+**/node_modules/
+**/dist/
+**/.astro/
+
+# Java build output
+**/*.class
+
+# Python caches / venvs
+**/__pycache__/
+**/*.pyc
+**/.venv/
+**/venv/
+**/*.egg-info/
+
+# VCS + editor
+**/.git/
+**/.idea/
+**/.vscode/
+
+# The harness's own runtime output (must never enter an image)
+bottling-company-test/replicated-output/
+bottling-company-test/out/
+
+# The sibling per-component harness — not needed by any build here, and its
+# replicated-output/ holds large committed Parquet fixtures.
+system-test/
+
+# Umbrella clutter irrelevant to any build
+old_readmes/
+roadmap/
+**/*.log
+**/.DS_Store

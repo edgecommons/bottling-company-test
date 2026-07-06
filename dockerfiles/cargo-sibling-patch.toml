@@ -1,0 +1,8 @@
+# Dropped into each Rust component's <crate>/.cargo/config.toml inside the edge-node image.
+#
+# The Dockerfile rewrites the copied component Cargo.toml dependency from the pinned git source
+# to `edgecommons = { path = "../core/libs/rust", ... }` before building. This config keeps Cargo
+# on the git CLI for any transitive git fetches, matching the component repos' local-dev setup.
+
+[net]
+git-fetch-with-cli = true

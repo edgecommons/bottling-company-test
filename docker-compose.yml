@@ -1,0 +1,48 @@
+# ============================================================================
+# EdgeCommons UNS — bottling-company E2E harness (ONE CONTAINER PER EDGE DEVICE).
+#
+# A fictional beverage bottling plant. This top-level file is intentionally thin: it just
+# `include:`s each SITE's self-contained compose file. That keeps the harness modular —
+# every site is a folder under sites/ with its own devices, supervisord confs and configs;
+# adding a site is one more include line (see below). At runtime `include:` FLATTENS into a
+# single Compose project, so `docker compose up` here brings up every included site together.
+#
+# Run (from THIS directory):
+#   cp .env.example .env                 # optional; compose has built-in ${VAR:-default}s
+#   docker compose up -d --build         # builds edge-node + site images, starts all 3 devices
+#   docker compose logs -f               # first build is long (Java + Rust + the TS/Carbon UI)
+# Console UI:  http://localhost:8080     (self-served by edge-console; no nginx)
+# ============================================================================
+
+name: bottling-company-test
+
+include:
+  - sites/dallas-site/docker-compose.yml
+
+  # ---- Adding a SECOND site (e.g. "chantilly") — one more include: -------------------------
+  # 1. cp -r sites/dallas-site sites/chantilly-site
+  # 2. In sites/chantilly-site/, rename every `dallas-*` service/container/hostname to
+  #    `chantilly-*` (the site prefix keeps the two projects from colliding), set each config's
+  #    identity.site to "chantilly", and point each bridge-config.json siteBroker.host at the
+  #    new site node `chantilly-site`. Give its published host ports fresh values in .env
+  #    (CONSOLE_PORT/…_BROKER_PORT) so they don't clash with dallas.
+  # 3. Uncomment the include below.
+  # - sites/chantilly-site/docker-compose.yml
+
+# ---- Future CLOUD / ENTERPRISE tier (multi-site UNS propagation) --------------------------
+# This spans sites, so — unlike the per-site includes above — it belongs HERE at the top level,
+# not inside any one site. Add an enterprise broker that each site's node bridges UP into (a
+# second uns-bridge instance per site node, siteBroker -> enterprise-broker), e.g.:
+#
+# services:
+#   enterprise-broker:
+#     build:
+#       context: ..
+#       dockerfile: bottling-company-test/dockerfiles/site.Dockerfile   # or a broker-only image
+#     container_name: enterprise-broker
+#     hostname: enterprise-broker
+#     ports:
+#       - "18820:1883"
+#
+# Then each site node runs an additional bridge relaying ecv1/# from its site bus up to
+# enterprise-broker:1883, giving cross-site (plant -> enterprise) UNS propagation.

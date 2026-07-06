@@ -1,0 +1,43 @@
+#!/bin/bash
+# wait-for-tcp — block until one or more TCP endpoints accept a connection, then exec a command.
+#
+# This is the readiness gate that lets supervisord start components "bare-metal style" without a
+# real dependency graph: each component waits for its local EMQX broker (localhost:1883) — and the
+# filling-line adapters additionally wait for their in-container field sim (localhost:4840 /
+# localhost:5020) — before the real process is exec'd. supervisord's priority= only influences
+# START ORDER, not readiness; this wrapper supplies the readiness.
+#
+# Usage:  wait-for-tcp host:port [host:port ...] -- <command> [args...]
+#
+# Notes:
+#   * Uses bash's /dev/tcp (present in the debian/ubuntu base images; no netcat needed).
+#   * Retries every second, forever — a slow broker boot is tolerated, not fatal. The site
+#     broker is intentionally NOT waited on here: the uns-bridge retries the site connection on
+#     its own, so a line device comes up even if the site node is still booting.
+set -u
+
+targets=()
+while [ "$#" -gt 0 ] && [ "$1" != "--" ]; do
+  targets+=("$1")
+  shift
+done
+if [ "${1:-}" = "--" ]; then
+  shift
+fi
+if [ "$#" -eq 0 ]; then
+  echo "[wait-for-tcp] ERROR: no command after '--'" >&2
+  exit 64
+fi
+
+for t in "${targets[@]}"; do
+  host="${t%:*}"
+  port="${t##*:}"
+  echo "[wait-for-tcp] waiting for ${host}:${port} ..."
+  until (exec 3<>"/dev/tcp/${host}/${port}") 2>/dev/null; do
+    sleep 1
+  done
+  echo "[wait-for-tcp] ${host}:${port} is accepting connections"
+done
+
+echo "[wait-for-tcp] all endpoints ready -> exec: $*"
+exec "$@"

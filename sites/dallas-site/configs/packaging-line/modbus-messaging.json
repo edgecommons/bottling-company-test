@@ -1,0 +1,10 @@
+{
+  "messaging": {
+    "local": {
+      "type": "mqtt",
+      "host": "localhost",
+      "port": 1883,
+      "clientId": "pack-modbus"
+    }
+  }
+}
