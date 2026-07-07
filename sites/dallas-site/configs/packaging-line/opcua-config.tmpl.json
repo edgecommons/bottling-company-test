@@ -58,7 +58,7 @@
             "include": [
               {
                 "namespaceUri": "Kepware Server",
-                "match": "^EdgeCommonsTest\\.Device1\\.Live.*",
+                "match": "^GGCommonsTest\\.Device1\\.Live.*",
                 "samplingRateMs": 200,
                 "queueSize": 20
               }

@@ -34,13 +34,6 @@
           "port": 1883,
           "clientId": "pack-bridge-site"
         },
-        "lwt": {
-          "topic": "ecv1/gw-pack-01/uns-bridge/main/state",
-          "payload": {
-            "status": "UNREACHABLE"
-          },
-          "qos": 1
-        },
         "uplink": {
           "classes": {
             "state": {

@@ -21,6 +21,7 @@
 # ---------------------------------------------------------------------------
 FROM maven:3.9-eclipse-temurin-25 AS java-build
 WORKDIR /build
+COPY core/proto core/proto
 COPY core/libs/java core/libs/java
 RUN cd core/libs/java && mvn -q -DskipTests -Dmaven.test.skip=true install
 COPY opcua-adapter opcua-adapter
@@ -35,6 +36,7 @@ RUN cd opcua-adapter && mvn -q -DskipTests -Dmaven.test.skip=true package
 # ---------------------------------------------------------------------------
 FROM rust:1-bookworm AS rust-build
 WORKDIR /build
+COPY core/proto core/proto
 COPY core/libs/rust core/libs/rust
 COPY core/libs/rust-streamlog core/libs/rust-streamlog
 COPY bottling-company-test/dockerfiles/cargo-sibling-patch.toml /tmp/cargo-sibling-patch.toml

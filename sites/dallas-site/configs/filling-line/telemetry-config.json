@@ -80,8 +80,18 @@
                 "type": "string"
               },
               {
+                "name": "messageTs",
+                "path": "body.messageTs",
+                "type": "string"
+              },
+              {
+                "name": "serverTs",
+                "path": "body.samples[].server_ts",
+                "type": "string"
+              },
+              {
                 "name": "sourceTs",
-                "path": "body.samples[].sourceTs",
+                "path": "body.samples[].source_ts",
                 "type": "string"
               },
               {

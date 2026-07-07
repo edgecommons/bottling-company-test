@@ -18,7 +18,8 @@
 -- GLOBALS the engine sets for us (from telemetry-processor/docs/scripting.mdx):
 --   topic        string  — source MQTT topic (ecv1/{device}/{component}/{instance}/data/{signal})
 --   body         table   — the full inbound body (body.signal{ id,name,address }, body.samples[])
---   samples      array   — body.samples (1-based Lua array; each has .value, .quality, .sourceTs …)
+--   samples      array   — body.samples (1-based Lua array; each has .value, .quality,
+--                            .sourceTs, .serverTs …)
 --   value        any     — samples[1].value  (first sample's value)
 --   quality      string  — samples[1].quality
 --   identity     table   — SOURCE publisher's UNS identity (identity.device/component/instance/path)
@@ -84,7 +85,8 @@ for i, s in ipairs(samples) do
     value    = s.value,                 -- raw value (as read from the field device)
     engValue = eng,                     -- transformed engineering value
     quality  = s.quality or "GOOD",
-    sourceTs = s.sourceTs,              -- carry the field timestamp through to Parquet
+    sourceTs = s.sourceTs,              -- original device/field timestamp, when available
+    serverTs = s.serverTs,              -- protocol server / adapter observation timestamp
   }
 end
 
@@ -111,7 +113,7 @@ end
 -- ---------------------------------------------------------------------
 -- 6. Return the new body. These keys line up 1:1 with the file-sink `rows.columns`
 --    projection in telemetry-config.json (device/component/signal/unit/rate/alarm at
---    message level; value/engValue/quality/sourceTs per exploded sample).
+--    message level; value/engValue/quality/sourceTs/serverTs per exploded sample).
 -- ---------------------------------------------------------------------
 return {
   device      = (identity and identity.device)    or thingName,
@@ -119,6 +121,7 @@ return {
   signalId    = sigId,
   signalName  = sigName,
   unit        = unit,
+  messageTs   = header and header.timestamp or nil,
   rate        = rate,
   alarm       = alarm,
   sampleCount = #samples,

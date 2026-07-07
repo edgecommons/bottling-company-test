@@ -34,13 +34,6 @@
           "port": 1883,
           "clientId": "fill-bridge-site"
         },
-        "lwt": {
-          "topic": "ecv1/gw-fill-01/uns-bridge/main/state",
-          "payload": {
-            "status": "UNREACHABLE"
-          },
-          "qos": 1
-        },
         "uplink": {
           "classes": {
             "state": {
