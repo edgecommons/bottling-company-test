@@ -1,0 +1,10 @@
+{
+  "messaging": {
+    "local": {
+      "host": "localhost",
+      "port": 1883,
+      "clientId": "pack-bridge-local"
+    },
+    "requestTimeoutSeconds": 30
+  }
+}

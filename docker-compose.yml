@@ -22,10 +22,10 @@ include:
   # ---- Adding a SECOND site (e.g. "chantilly") — one more include: -------------------------
   # 1. cp -r sites/dallas-site sites/chantilly-site
   # 2. In sites/chantilly-site/, rename every `dallas-*` service/container/hostname to
-  #    `chantilly-*` (the site prefix keeps the two projects from colliding), set each config's
-  #    identity.site to "chantilly", and point each bridge-config.json siteBroker.host at the
-  #    new site node `chantilly-site`. Give its published host ports fresh values in .env
-  #    (CONSOLE_PORT/…_BROKER_PORT) so they don't clash with dallas.
+  #    `chantilly-*` (the site prefix keeps the two projects from colliding), set each
+  #    config-catalog*.json site hierarchy node to "chantilly", and point each UnsBridge catalog
+  #    entry's siteBroker.host at the new site node `chantilly-site`. Give its published host
+  #    ports fresh values in .env (CONSOLE_PORT/…_BROKER_PORT) so they don't clash with dallas.
   # 3. Uncomment the include below.
   # - sites/chantilly-site/docker-compose.yml
 

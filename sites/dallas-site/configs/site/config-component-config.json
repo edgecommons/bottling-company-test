@@ -1,0 +1,47 @@
+{
+  "hierarchy": {
+    "levels": ["enterprise", "site", "device"]
+  },
+  "identity": {
+    "enterprise": "bottles-r-us",
+    "site": "dallas"
+  },
+  "tags": {
+    "appId": "bottling-plant",
+    "componentRole": "configuration"
+  },
+  "logging": {
+    "level": "INFO",
+    "rust_format": "{timestamp} [{level}] {target} - {message}"
+  },
+  "heartbeat": {
+    "enabled": true,
+    "intervalSecs": 15,
+    "measures": {
+      "cpu": true,
+      "memory": true
+    }
+  },
+  "metricEmission": {
+    "target": "messaging"
+  },
+  "component": {
+    "token": "edgecommons-config-component",
+    "global": {
+      "configComponent": {
+        "catalogSource": {
+          "type": "file",
+          "path": "/config/config-catalog.json",
+          "watch": true
+        },
+        "pushOnCatalogReload": true,
+        "allowVolatileCatalogUpdates": true
+      }
+    },
+    "instances": [
+      {
+        "id": "main"
+      }
+    ]
+  }
+}

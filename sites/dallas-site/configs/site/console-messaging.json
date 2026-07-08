@@ -1,0 +1,10 @@
+{
+  "messaging": {
+    "local": {
+      "host": "localhost",
+      "port": 1883,
+      "clientId": "edge-console"
+    },
+    "requestTimeoutSeconds": 30
+  }
+}

@@ -1,0 +1,234 @@
+{
+  "schemaVersion": 1,
+  "version": "bottles-r-us-dallas-packaging-line-initial",
+  "provenance": {
+    "source": "file",
+    "uri": "/run/config/config-catalog.json"
+  },
+  "hierarchy": {
+    "levels": ["enterprise", "site", "line", "device"]
+  },
+  "nodes": {
+    "enterprise/bottles-r-us": {
+      "scope": {
+        "enterprise": "bottles-r-us"
+      },
+      "config": {
+        "hierarchy": {
+          "levels": ["enterprise", "site", "line", "device"]
+        },
+        "identity": {
+          "enterprise": "bottles-r-us"
+        },
+        "tags": {
+          "appId": "bottling-plant",
+          "scenario": "bottling-company-test"
+        },
+        "logging": {
+          "level": "INFO"
+        },
+        "heartbeat": {
+          "enabled": true,
+          "intervalSecs": 30,
+          "measures": {
+            "cpu": true,
+            "memory": false
+          }
+        },
+        "metricEmission": {
+          "target": "messaging"
+        }
+      }
+    },
+    "site/dallas": {
+      "parent": "enterprise/bottles-r-us",
+      "scope": {
+        "enterprise": "bottles-r-us",
+        "site": "dallas"
+      },
+      "config": {
+        "identity": {
+          "site": "dallas"
+        },
+        "heartbeat": {
+          "intervalSecs": 15,
+          "measures": {
+            "memory": true
+          }
+        }
+      }
+    },
+    "line/packaging-line": {
+      "parent": "site/dallas",
+      "scope": {
+        "enterprise": "bottles-r-us",
+        "site": "dallas",
+        "line": "packaging-line"
+      },
+      "config": {
+        "identity": {
+          "line": "packaging-line"
+        },
+        "heartbeat": {
+          "intervalSecs": 5
+        }
+      }
+    }
+  },
+  "components": {
+    "OpcUaAdapter": {
+      "parent": "line/packaging-line",
+      "config": {
+        "metricEmission": {
+          "targetConfig": {
+            "destination": "local"
+          }
+        },
+        "component": {
+          "token": "opcua-adapter",
+          "global": {
+            "defaults": {
+              "publishIntervalMs": 500,
+              "samplingRateMs": 200,
+              "queueSize": 20
+            }
+          },
+          "instances": [
+            {
+              "id": "palletizer1",
+              "connection": {
+                "endpoint": "__KEPWARE_ENDPOINT__",
+                "securityPolicy": "None",
+                "user": {
+                  "username": "__KEPWARE_USER__",
+                  "password": "__KEPWARE_PASS__"
+                }
+              },
+              "publish": {
+                "batchMs": 0
+              },
+              "subscriptions": [
+                {
+                  "id": "live",
+                  "include": [
+                    {
+                      "namespaceUri": "Kepware Server",
+                      "match": "^GGCommonsTest\\.Device1\\.Live.*",
+                      "samplingRateMs": 200,
+                      "queueSize": 20
+                    }
+                  ],
+                  "exclude": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "ModbusAdapter": {
+      "parent": "line/packaging-line",
+      "config": {
+        "component": {
+          "token": "modbus-adapter",
+          "global": {
+            "defaults": {
+              "pollIntervalMs": 500,
+              "publishMode": "always",
+              "batchMs": 0,
+              "maxGap": 4
+            }
+          },
+          "instances": [
+            {
+              "id": "casepacker1",
+              "connection": {
+                "transport": "tcp",
+                "host": "__MODBUS_HOST__",
+                "port": __MODBUS_PORT__,
+                "unitId": 1,
+                "timeoutMs": 1000
+              },
+              "publish": {
+                "batchMs": 0
+              },
+              "write": {
+                "enabled": false
+              },
+              "pollGroups": [
+                {
+                  "id": "main",
+                  "pollIntervalMs": 500,
+                  "publishMode": "always",
+                  "signals": [
+                    { "name": "CaseCount", "table": "input", "address": 0, "type": "uint16" },
+                    { "name": "JamStatus", "table": "discrete", "address": 0, "type": "bool" },
+                    { "name": "RunCommand", "table": "coil", "address": 0, "type": "bool" }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "UnsBridge": {
+      "parent": "line/packaging-line",
+      "config": {
+        "messaging": {
+          "local": {
+            "host": "localhost",
+            "port": 1883,
+            "clientId": "pack-bridge-local"
+          },
+          "requestTimeoutSeconds": 30
+        },
+        "component": {
+          "token": "uns-bridge",
+          "instances": [
+            {
+              "id": "site",
+              "siteBroker": {
+                "host": "dallas-site",
+                "port": 1883,
+                "clientId": "pack-bridge-site"
+              },
+              "uplink": {
+                "classes": {
+                  "state": { "enabled": true },
+                  "cfg": { "enabled": true },
+                  "evt": {
+                    "enabled": true,
+                    "bufferWhileDisconnected": {
+                      "maxMessages": 1000
+                    }
+                  },
+                  "metric": {
+                    "enabled": true,
+                    "maxRatePerSec": 50
+                  },
+                  "data": {
+                    "enabled": true,
+                    "maxRatePerSec": 200,
+                    "burst": 400
+                  },
+                  "log": { "enabled": false },
+                  "app": { "enabled": false }
+                }
+              },
+              "reply": {
+                "ttlSecs": 60,
+                "maxPending": 1024
+              },
+              "maxHops": 4,
+              "queue": {
+                "data": 512,
+                "default": 64
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

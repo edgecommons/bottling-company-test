@@ -28,7 +28,7 @@ COPY opcua-adapter opcua-adapter
 RUN cd opcua-adapter && mvn -q -DskipTests -Dmaven.test.skip=true package
 
 # ---------------------------------------------------------------------------
-# Stage 2 — Rust (telemetry-processor, file-replicator, uns-bridge). The sibling edgecommons
+# Stage 2 — Rust (telemetry-processor, file-replicator, uns-bridge, config-component). The sibling edgecommons
 # crates are copied next to each component, and each copied Cargo.toml is rewritten in-image
 # to depend on ../core/libs/rust (edgecommons's own path-dep ../rust-streamlog also resolves). Only the
 # features this harness needs are built — no kafka/kinesis/greengrass, so no heavy C builds
@@ -43,17 +43,20 @@ COPY bottling-company-test/dockerfiles/cargo-sibling-patch.toml /tmp/cargo-sibli
 COPY telemetry-processor telemetry-processor
 COPY file-replicator file-replicator
 COPY uns-bridge uns-bridge
-RUN mkdir -p telemetry-processor/.cargo file-replicator/.cargo uns-bridge/.cargo \
+COPY config-component config-component
+RUN mkdir -p telemetry-processor/.cargo file-replicator/.cargo uns-bridge/.cargo config-component/.cargo \
  && cp /tmp/cargo-sibling-patch.toml telemetry-processor/.cargo/config.toml \
  && cp /tmp/cargo-sibling-patch.toml file-replicator/.cargo/config.toml \
- && cp /tmp/cargo-sibling-patch.toml uns-bridge/.cargo/config.toml
-RUN for crate in telemetry-processor file-replicator uns-bridge; do \
+ && cp /tmp/cargo-sibling-patch.toml uns-bridge/.cargo/config.toml \
+ && cp /tmp/cargo-sibling-patch.toml config-component/.cargo/config.toml
+RUN for crate in telemetry-processor file-replicator uns-bridge config-component; do \
       sed -i 's#^edgecommons = { git = "https://github.com/edgecommons/edgecommons.git".*#edgecommons = { path = "../core/libs/rust", default-features = false }#' "$crate/Cargo.toml"; \
     done
 RUN cd telemetry-processor && cargo build --release --no-default-features \
       --features "standalone,streaming,streaming-file-parquet,scripting-lua"
 RUN cd file-replicator && cargo build --release --no-default-features --features standalone
 RUN cd uns-bridge && cargo build --release
+RUN cd config-component && cargo build --release
 
 # ---------------------------------------------------------------------------
 # Stage 3 — runtime. Base = Temurin 25 JRE on Ubuntu Noble (glibc 2.39). The Rust binaries
@@ -91,6 +94,7 @@ RUN python3 -m venv /opt/pyenv \
 COPY --from=rust-build /build/telemetry-processor/target/release/telemetry-processor /usr/local/bin/telemetry-processor
 COPY --from=rust-build /build/file-replicator/target/release/file-replicator /usr/local/bin/file-replicator
 COPY --from=rust-build /build/uns-bridge/target/release/uns-bridge /usr/local/bin/uns-bridge
+COPY --from=rust-build /build/config-component/target/release/config-component /usr/local/bin/config-component
 
 # Java OPC UA adapter jar (from stage 1).
 COPY --from=java-build /build/opcua-adapter/target/OpcUaAdapter-1.0.0.jar /app/opcua/app.jar
@@ -110,7 +114,7 @@ COPY modbus-adapter/validation/modbus_sim_server.py /opt/sims/modbus_sim_server.
 # renderers (host:port / endpoint / creds -> /run/config, kept out of the supervisord command
 # line because '%' is a supervisord sigil).
 COPY bottling-company-test/dockerfiles/bin/ /usr/local/bin/
-RUN chmod +x /usr/local/bin/wait-for-tcp /usr/local/bin/render-opcua-config /usr/local/bin/render-modbus-config
+RUN chmod +x /usr/local/bin/wait-for-tcp /usr/local/bin/render-opcua-config /usr/local/bin/render-modbus-config /usr/local/bin/render-packaging-catalog
 
 # Pipeline scratch dirs (telemetry writes /out/archive; file-replicator reads it and archives
 # to /out/_archived — both in THIS container now, no shared volume needed) + the render dir +

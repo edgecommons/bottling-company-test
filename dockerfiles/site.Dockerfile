@@ -42,7 +42,22 @@ WORKDIR /build/edge-console
 RUN npm run link:lib && npm install && npm run build
 
 # ---------------------------------------------------------------------------
-# Stage 2 — runtime. Base = node:22-slim (Debian Bookworm) for the console server; add EMQX
+# Stage 2 — build the Rust ConfigComponent used by the site node.
+# ---------------------------------------------------------------------------
+FROM rust:1-bookworm AS config-build
+WORKDIR /build
+COPY core/proto core/proto
+COPY core/libs/rust core/libs/rust
+COPY core/libs/rust-streamlog core/libs/rust-streamlog
+COPY bottling-company-test/dockerfiles/cargo-sibling-patch.toml /tmp/cargo-sibling-patch.toml
+COPY config-component config-component
+RUN mkdir -p config-component/.cargo \
+ && cp /tmp/cargo-sibling-patch.toml config-component/.cargo/config.toml \
+ && sed -i 's#^edgecommons = { git = "https://github.com/edgecommons/edgecommons.git".*#edgecommons = { path = "../core/libs/rust", default-features = false }#' config-component/Cargo.toml
+RUN cd config-component && cargo build --release
+
+# ---------------------------------------------------------------------------
+# Stage 3 — runtime. Base = node:22-slim (Debian Bookworm) for the console server; add EMQX
 # (official apt repo), supervisord and bash (wait-for-tcp gate). Copy the whole build tree so
 # edge-console/ and edgecommons/ stay siblings and the server can serve ui/dist.
 # ---------------------------------------------------------------------------
@@ -60,10 +75,11 @@ RUN apt-get update \
 
 # Built console tree (server dist + ui/dist + the sibling edgecommons dist it links to).
 COPY --from=console-build /build /app
+COPY --from=config-build /build/config-component/target/release/config-component /usr/local/bin/config-component
 
 # wait-for-tcp readiness gate (the console waits for the local EMQX before connecting).
 COPY bottling-company-test/dockerfiles/bin/ /usr/local/bin/
-RUN chmod +x /usr/local/bin/wait-for-tcp /usr/local/bin/render-opcua-config /usr/local/bin/render-modbus-config
+RUN chmod +x /usr/local/bin/wait-for-tcp /usr/local/bin/render-opcua-config /usr/local/bin/render-modbus-config /usr/local/bin/render-packaging-catalog
 
 # supervisord is PID 1; site.conf is bind-mounted by compose at /etc/supervisor/supervisord.conf.
 ENTRYPOINT ["supervisord"]

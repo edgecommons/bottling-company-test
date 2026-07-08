@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "version": "bottles-r-us-dallas-site-initial",
+  "provenance": {
+    "source": "file",
+    "uri": "/config/config-catalog.json"
+  },
+  "hierarchy": {
+    "levels": ["enterprise", "site", "device"]
+  },
+  "nodes": {
+    "enterprise/bottles-r-us": {
+      "scope": {
+        "enterprise": "bottles-r-us"
+      },
+      "config": {
+        "hierarchy": {
+          "levels": ["enterprise", "site", "device"]
+        },
+        "identity": {
+          "enterprise": "bottles-r-us"
+        },
+        "tags": {
+          "appId": "bottling-plant",
+          "scenario": "bottling-company-test"
+        },
+        "logging": {
+          "level": "INFO"
+        },
+        "heartbeat": {
+          "enabled": true,
+          "intervalSecs": 30,
+          "measures": {
+            "cpu": true,
+            "memory": false
+          }
+        },
+        "metricEmission": {
+          "target": "messaging"
+        }
+      }
+    },
+    "site/dallas": {
+      "parent": "enterprise/bottles-r-us",
+      "scope": {
+        "enterprise": "bottles-r-us",
+        "site": "dallas"
+      },
+      "config": {
+        "identity": {
+          "site": "dallas"
+        },
+        "heartbeat": {
+          "intervalSecs": 15,
+          "measures": {
+            "memory": true
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "EdgeConsole": {
+      "parent": "site/dallas",
+      "config": {
+        "messaging": {
+          "local": {
+            "host": "localhost",
+            "port": 1883,
+            "clientId": "edge-console"
+          },
+          "requestTimeoutSeconds": 30
+        },
+        "heartbeat": {
+          "intervalSecs": 5
+        },
+        "component": {
+          "token": "edge-console",
+          "global": {
+            "console": {
+              "ws": {
+                "port": 8443,
+                "bindAddress": "0.0.0.0",
+                "heartbeatIntervalMs": 15000,
+                "webRoot": "/app/edge-console/ui/dist"
+              },
+              "staleness": {
+                "warnMultiplier": 2,
+                "staleMultiplier": 2.5,
+                "offlineMultiplier": 5,
+                "defaultIntervalSecs": 5,
+                "sweepIntervalMs": 1000
+              },
+              "cache": {
+                "maxChannelsPerComponent": 1024
+              }
+            }
+          },
+          "instances": [
+            {
+              "id": "main"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

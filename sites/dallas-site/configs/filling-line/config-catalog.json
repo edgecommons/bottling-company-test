@@ -1,0 +1,437 @@
+{
+  "schemaVersion": 1,
+  "version": "bottles-r-us-dallas-filling-line-initial",
+  "provenance": {
+    "source": "file",
+    "uri": "/config/config-catalog.json"
+  },
+  "hierarchy": {
+    "levels": ["enterprise", "site", "line", "device"]
+  },
+  "nodes": {
+    "enterprise/bottles-r-us": {
+      "scope": {
+        "enterprise": "bottles-r-us"
+      },
+      "config": {
+        "hierarchy": {
+          "levels": ["enterprise", "site", "line", "device"]
+        },
+        "identity": {
+          "enterprise": "bottles-r-us"
+        },
+        "tags": {
+          "appId": "bottling-plant",
+          "scenario": "bottling-company-test"
+        },
+        "logging": {
+          "level": "INFO"
+        },
+        "heartbeat": {
+          "enabled": true,
+          "intervalSecs": 30,
+          "measures": {
+            "cpu": true,
+            "memory": false
+          }
+        },
+        "metricEmission": {
+          "target": "messaging"
+        }
+      }
+    },
+    "site/dallas": {
+      "parent": "enterprise/bottles-r-us",
+      "scope": {
+        "enterprise": "bottles-r-us",
+        "site": "dallas"
+      },
+      "config": {
+        "identity": {
+          "site": "dallas"
+        },
+        "heartbeat": {
+          "intervalSecs": 15,
+          "measures": {
+            "memory": true
+          }
+        }
+      }
+    },
+    "line/filling-line": {
+      "parent": "site/dallas",
+      "scope": {
+        "enterprise": "bottles-r-us",
+        "site": "dallas",
+        "line": "filling-line"
+      },
+      "config": {
+        "identity": {
+          "line": "filling-line"
+        },
+        "heartbeat": {
+          "intervalSecs": 5
+        }
+      }
+    }
+  },
+  "components": {
+    "OpcUaAdapter": {
+      "parent": "line/filling-line",
+      "config": {
+        "metricEmission": {
+          "targetConfig": {
+            "destination": "local"
+          }
+        },
+        "component": {
+          "token": "opcua-adapter",
+          "global": {
+            "defaults": {
+              "publishIntervalMs": 500,
+              "samplingRateMs": 250,
+              "queueSize": 100
+            },
+            "healthThresholds": {
+              "staleSignalSecs": 30
+            }
+          },
+          "instances": [
+            {
+              "id": "filler1",
+              "connection": {
+                "endpoint": "opc.tcp://localhost:4840/",
+                "securityPolicy": "None"
+              },
+              "publish": {
+                "batchMs": 500
+              },
+              "writes": {
+                "allow": ["ns=2;s=Setpoint"]
+              },
+              "subscriptions": [
+                {
+                  "id": "fillhead",
+                  "include": [
+                    {
+                      "namespaceUri": "urn:edgecommons:sim",
+                      "match": "^(Sine1|Counter)$",
+                      "samplingRateMs": 250,
+                      "queueSize": 50,
+                      "deadband": {
+                        "type": "None",
+                        "value": 0.0
+                      }
+                    }
+                  ],
+                  "exclude": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "ModbusAdapter": {
+      "parent": "line/filling-line",
+      "config": {
+        "component": {
+          "token": "modbus-adapter",
+          "global": {
+            "defaults": {
+              "pollIntervalMs": 500,
+              "publishMode": "always",
+              "batchMs": 0,
+              "maxGap": 4
+            }
+          },
+          "instances": [
+            {
+              "id": "conveyor1",
+              "connection": {
+                "transport": "tcp",
+                "host": "localhost",
+                "port": 5020,
+                "unitId": 1,
+                "timeoutMs": 1000
+              },
+              "publish": {
+                "batchMs": 0
+              },
+              "write": {
+                "enabled": false
+              },
+              "pollGroups": [
+                {
+                  "id": "main",
+                  "pollIntervalMs": 500,
+                  "publishMode": "always",
+                  "signals": [
+                    {
+                      "name": "BottleCount",
+                      "table": "holding",
+                      "address": 0,
+                      "type": "uint16"
+                    },
+                    {
+                      "name": "ProductTemp",
+                      "table": "holding",
+                      "address": 1,
+                      "type": "float32"
+                    },
+                    {
+                      "name": "FillLevel",
+                      "table": "holding",
+                      "address": 40,
+                      "type": "uint16",
+                      "scale": 0.1
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "TelemetryProcessor": {
+      "parent": "line/filling-line",
+      "config": {
+        "logging": {
+          "rust_format": "{timestamp} [{level}] {target} - {message}"
+        },
+        "heartbeat": {
+          "intervalSecs": 10
+        },
+        "metricEmission": {
+          "namespace": "edgecommons"
+        },
+        "streaming": {
+          "streams": [
+            {
+              "name": "archive",
+              "sink": {
+                "type": "file",
+                "format": "parquet",
+                "mode": "rows",
+                "dir": "/out/archive",
+                "partitionBy": "dt={yyyy-MM-dd}/hr={HH}",
+                "maxFileBytes": 1048576,
+                "maxFiles": 64,
+                "rollEverySecs": 20,
+                "onFull": "dropOldest",
+                "compression": "snappy",
+                "rows": {
+                  "explode": "body.samples",
+                  "columns": [
+                    { "name": "device", "path": "body.device", "type": "string" },
+                    { "name": "component", "path": "body.component", "type": "string" },
+                    { "name": "signal", "path": "body.signalName", "type": "string" },
+                    { "name": "unit", "path": "body.unit", "type": "string" },
+                    { "name": "rawValue", "path": "body.samples[].value", "type": "double" },
+                    { "name": "engValue", "path": "body.samples[].engValue", "type": "double" },
+                    { "name": "quality", "path": "body.samples[].quality", "type": "string" },
+                    { "name": "messageTs", "path": "body.messageTs", "type": "string" },
+                    { "name": "serverTs", "path": "body.samples[].server_ts", "type": "string" },
+                    { "name": "sourceTs", "path": "body.samples[].source_ts", "type": "string" },
+                    { "name": "rate", "path": "body.rate", "type": "double" },
+                    { "name": "alarm", "path": "body.alarm", "type": "bool" }
+                  ]
+                }
+              },
+              "buffer": {
+                "type": "disk",
+                "path": "/out/.stream-buffer/archive",
+                "segmentBytes": 1048576,
+                "maxDiskBytes": 67108864,
+                "onFull": "dropOldest"
+              },
+              "batch": {
+                "maxRecords": 200,
+                "maxBytes": 1048576,
+                "maxLatencyMs": 2000
+              },
+              "delivery": {
+                "pollIntervalMs": 500
+              }
+            }
+          ]
+        },
+        "component": {
+          "token": "telemetry-processor",
+          "global": {
+            "defaults": {
+              "key": "body.signal.id",
+              "scriptEngine": "lua",
+              "scriptsDir": "/scripts"
+            }
+          },
+          "instances": [
+            {
+              "id": "downsample-local",
+              "subscribe": ["ecv1/+/+/+/data/#"],
+              "pipeline": [
+                {
+                  "filter": {
+                    "quality": "GOOD"
+                  }
+                },
+                {
+                  "sample": {
+                    "everyMs": 1000,
+                    "by": "body.signal.id"
+                  }
+                }
+              ],
+              "target": "local",
+              "publish": {
+                "topic": "ecv1/{ThingName}/telemetry-processor/main/data/{enterprise}/{site}/{line}/downsampled"
+              }
+            },
+            {
+              "id": "archive",
+              "subscribe": ["ecv1/+/+/+/data/#"],
+              "pipeline": [
+                {
+                  "filter": {
+                    "quality": "GOOD"
+                  }
+                },
+                {
+                  "script": {
+                    "file": "transform.lua"
+                  }
+                }
+              ],
+              "target": "stream:archive",
+              "publish": {
+                "partitionKey": "body.signal.id"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "FileReplicator": {
+      "parent": "line/filling-line",
+      "config": {
+        "logging": {
+          "rust_format": "{timestamp} [{level}] {target} - {message}"
+        },
+        "heartbeat": {
+          "intervalSecs": 10
+        },
+        "metricEmission": {
+          "namespace": "edgecommons"
+        },
+        "component": {
+          "token": "file-replicator",
+          "global": {
+            "defaults": {
+              "retry": {
+                "baseDelayMs": 1000,
+                "maxDelayMs": 900000,
+                "giveUpAfter": "7d"
+              }
+            },
+            "limits": {
+              "maxConcurrentFiles": 8
+            }
+          },
+          "instances": [
+            {
+              "id": "archive-to-replicated",
+              "ingress": {
+                "path": "/out/archive",
+                "recursive": true,
+                "include": ["**/*.parquet"],
+                "exclude": ["**/*.inprogress"],
+                "readiness": {
+                  "strategy": "stability",
+                  "quietSecs": 3
+                }
+              },
+              "egress": [
+                {
+                  "type": "local",
+                  "path": "/mnt/replicated",
+                  "fsync": true
+                }
+              ],
+              "schedule": {
+                "mode": "immediate"
+              },
+              "completion": {
+                "onSuccess": "archive",
+                "archiveDir": "/out/_archived",
+                "onExhausted": "retainInPlace",
+                "verify": "checksum"
+              },
+              "limits": {
+                "maxConcurrentFiles": 4
+              }
+            }
+          ]
+        }
+      }
+    },
+    "UnsBridge": {
+      "parent": "line/filling-line",
+      "config": {
+        "messaging": {
+          "local": {
+            "host": "localhost",
+            "port": 1883,
+            "clientId": "fill-bridge-local"
+          },
+          "requestTimeoutSeconds": 30
+        },
+        "component": {
+          "token": "uns-bridge",
+          "instances": [
+            {
+              "id": "site",
+              "siteBroker": {
+                "host": "dallas-site",
+                "port": 1883,
+                "clientId": "fill-bridge-site"
+              },
+              "uplink": {
+                "classes": {
+                  "state": { "enabled": true },
+                  "cfg": { "enabled": true },
+                  "evt": {
+                    "enabled": true,
+                    "bufferWhileDisconnected": {
+                      "maxMessages": 1000
+                    }
+                  },
+                  "metric": {
+                    "enabled": true,
+                    "maxRatePerSec": 50
+                  },
+                  "data": {
+                    "enabled": true,
+                    "maxRatePerSec": 200,
+                    "burst": 400
+                  },
+                  "log": { "enabled": false },
+                  "app": { "enabled": false }
+                }
+              },
+              "reply": {
+                "ttlSecs": 60,
+                "maxPending": 1024
+              },
+              "maxHops": 4,
+              "queue": {
+                "data": 512,
+                "default": 64
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

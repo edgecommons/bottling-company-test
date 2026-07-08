@@ -1,0 +1,19 @@
+#!/bin/bash
+# render-packaging-catalog — fill the packaging-line hierarchical catalog template
+# from external endpoint knobs just before the ConfigComponent starts.
+#
+# Usage: render-packaging-catalog <template.json> <output.json> <endpoint> <user> <pass> <host:port>
+set -euo pipefail
+
+tmpl="$1"; out="$2"; endpoint="$3"; user="$4"; pass="$5"; hostport="$6"
+host="${hostport%:*}"
+port="${hostport##*:}"
+mkdir -p "$(dirname "$out")"
+sed \
+  -e "s|__KEPWARE_ENDPOINT__|${endpoint}|g" \
+  -e "s|__KEPWARE_USER__|${user}|g" \
+  -e "s|__KEPWARE_PASS__|${pass}|g" \
+  -e "s|__MODBUS_HOST__|${host}|g" \
+  -e "s|__MODBUS_PORT__|${port}|g" \
+  "$tmpl" > "$out"
+echo "[render-packaging-catalog] wrote ${out} (endpoint=${endpoint}, modbus=${host}:${port})"

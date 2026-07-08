@@ -305,7 +305,7 @@ bottling-company-test/
     *.Dockerfile.dockerignore     # per-Dockerfile copies of the canonical ignore
     cargo-sibling-patch.toml      # Rust [patch] -> sibling edgecommons
     streamlog-node-stub/        # type-only stub for the console TS build
-    bin/                          # wait-for-tcp, render-opcua-config, render-modbus-config
+    bin/                          # wait-for-tcp plus packaging catalog renderer helpers
   sites/
     dallas-site/
       docker-compose.yml          # 3 services: dallas-site, dallas-filling-line, dallas-packaging-line
@@ -327,10 +327,10 @@ included sites together.
 
 1. `cp -r sites/dallas-site sites/chantilly-site`.
 2. In `sites/chantilly-site/`: rename every `dallas-*` service/container/hostname to
-   `chantilly-*` (the site prefix prevents collisions), set each config's `identity.site` to
-   `"chantilly"`, and point each `bridge-config.json` `siteBroker.host` at the new site node
-   `chantilly-site`. Give its published host ports fresh `.env` values so they don't clash with
-   dallas.
+   `chantilly-*` (the site prefix prevents collisions), set the site hierarchy node names in each
+   `config-catalog*.json` file to `"chantilly"`, and point each `UnsBridge` catalog entry's
+   `siteBroker.host` at the new site node `chantilly-site`. Give its published host ports fresh
+   `.env` values so they don't clash with dallas.
 3. Uncomment `- sites/chantilly-site/docker-compose.yml` in the top-level `docker-compose.yml`.
 
 ### Where the future cloud / enterprise tier plugs in
@@ -342,16 +342,22 @@ site bus up to that broker. (Left as a documented extension point, not built.)
 
 ---
 
-## Note on config semantics (deliberately preserved)
+## Note on hierarchical config semantics
 
-The configs were reworked ONLY to repoint hosts for the collapsed topology:
+Each device now starts a local ConfigComponent and the framework components load their effective
+runtime config through `-c CONFIG_COMPONENT`. The component catalogs model the plant as
+`enterprise -> site -> line -> device` for line devices and `enterprise -> site -> device` for the
+site node:
 
 - every component's `messaging.local.host` → **`localhost`** (its in-container EMQX);
 - filling-line adapters → **localhost** sims (`opc.tcp://localhost:4840`, Modbus `localhost:5020`);
   packaging-line adapters → the **external** endpoints (unchanged `__KEPWARE_ENDPOINT__` /
   `__MODBUS_HOST__`/`__MODBUS_PORT__` template tokens);
-- each bridge's `siteBroker.host` → **`dallas-site`**;
+- each line bridge's `siteBroker.host` → **`dallas-site`**;
 - the console's `messaging.local.host` → **`localhost`** (`ws.webRoot` unchanged).
+
+Identity levels are declared once in the hierarchy, not repeated as message tags. Template symbols
+can use identity names directly, for example `{enterprise}`, `{site}` and `{line}`.
 
 **Everything else intentionally preserves the scenario semantics inherited from `system-test/`** —
 the `identity` / `hierarchy` / `tags` / `metricEmission` blocks, the redundant `instances[].adapter`, the
