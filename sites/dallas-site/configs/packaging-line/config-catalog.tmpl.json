@@ -25,7 +25,12 @@
           "scenario": "bottling-company-test"
         },
         "logging": {
-          "level": "INFO"
+          "level": "INFO",
+          "publish": {
+            "enabled": true,
+            "destination": "local",
+            "minLevel": "INFO"
+          }
         },
         "heartbeat": {
           "enabled": true,
@@ -98,11 +103,7 @@
               "id": "palletizer1",
               "connection": {
                 "endpoint": "__KEPWARE_ENDPOINT__",
-                "securityPolicy": "None",
-                "user": {
-                  "username": "__KEPWARE_USER__",
-                  "password": "__KEPWARE_PASS__"
-                }
+                "securityPolicy": "None"
               },
               "publish": {
                 "batchMs": 0
@@ -212,7 +213,10 @@
                     "maxRatePerSec": 200,
                     "burst": 400
                   },
-                  "log": { "enabled": false },
+                  "log": {
+                    "enabled": true,
+                    "maxRatePerSec": 50
+                  },
                   "app": { "enabled": false }
                 }
               },

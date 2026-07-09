@@ -274,8 +274,7 @@ file-replicator share `/out` as a plain in-container directory — same device, 
 | `FILL_BROKER_PORT` | `18831` | filling-line EMQX `:1883` published |
 | `PACK_BROKER_PORT` | `18832` | packaging-line EMQX `:1883` published |
 | `SITE_DASHBOARD_PORT` | `18084` | site EMQX dashboard (remapped off 18083 — `edgecommons-emqx` uses 18083) |
-| `KEPWARE_ENDPOINT` | `opc.tcp://192.168.1.180:49320` | packaging OPC UA endpoint |
-| `KEPWARE_USER` / `KEPWARE_PASS` | `testuser` / `CHANGE_ME` | KepWare credentials. Set a real password in local `.env` before starting the packaging line. |
+| `KEPWARE_ENDPOINT` | `opc.tcp://192.168.1.180:49320` | packaging OPC UA endpoint. The packaging Kepware instance uses anonymous OPC UA identity. |
 | `HOST_MODBUS` | `192.168.1.224:5020` | packaging host Modbus `host:port` (split into the template's host + port) |
 
 On Docker Desktop, containers reach LAN IPs via the host NAT; if a packaging source runs **on

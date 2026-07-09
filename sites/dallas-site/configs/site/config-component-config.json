@@ -12,7 +12,12 @@
   },
   "logging": {
     "level": "INFO",
-    "rust_format": "{timestamp} [{level}] [{component}] {target} - {message}"
+    "rust_format": "{timestamp} [{level}] [{component}] {target} - {message}",
+    "publish": {
+      "enabled": true,
+      "destination": "local",
+      "minLevel": "INFO"
+    }
   },
   "heartbeat": {
     "enabled": true,
