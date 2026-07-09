@@ -198,7 +198,7 @@
       "parent": "line/filling-line",
       "config": {
         "logging": {
-          "rust_format": "{timestamp} [{level}] {target} - {message}"
+          "rust_format": "{timestamp} [{level}] [{component}] {target} - {message}"
         },
         "heartbeat": {
           "intervalSecs": 10
@@ -316,7 +316,7 @@
       "parent": "line/filling-line",
       "config": {
         "logging": {
-          "rust_format": "{timestamp} [{level}] {target} - {message}"
+          "rust_format": "{timestamp} [{level}] [{component}] {target} - {message}"
         },
         "heartbeat": {
           "intervalSecs": 10
