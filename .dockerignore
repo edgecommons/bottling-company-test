@@ -32,6 +32,10 @@
 **/dist/
 **/.astro/
 
+# Local edge-console Rust-link stubs are recreated inside the Docker build stages.
+edge-console/local/
+edge-console/proto
+
 # Java build output
 **/*.class
 

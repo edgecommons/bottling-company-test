@@ -36,13 +36,12 @@ services:
       - ./configs/site:/config:ro
       - ./supervisor/site.conf:/etc/supervisor/supervisord.conf:ro
     ports:
-      - "${CONSOLE_PORT:-8080}:8443"          # edge-console UI + WS (self-served, no nginx)
+      - "127.0.0.1:${CONSOLE_PORT:-8080}:8443" # edge-console UI + WS (self-served, no nginx)
       - "${SITE_BROKER_PORT:-18830}:1883"     # site EMQX (MQTTX/debug; internal port is 1883)
       - "${SITE_DASHBOARD_PORT:-18084}:18083" # site EMQX dashboard (remapped off 18083 — the
                                               # standing edgecommons-emqx already publishes 18083)
     healthcheck:
-      test: ["CMD", "node", "-e",
-             "require('http').get('http://127.0.0.1:8443/healthz',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8443/healthz"]
       interval: 10s
       timeout: 5s
       retries: 18

@@ -37,7 +37,7 @@ flowchart LR
 
   subgraph SITE["dallas-site  (site node)"]
     direction TB
-    sconsole["edge-console (Node)<br/>UI + WS :8443"]
+    sconsole["edge-console (Rust)<br/>UI + WS :8443"]
     sbroker[("EMQX :1883")]
     sbroker --> sconsole
   end
@@ -133,10 +133,13 @@ each component — using the same local-sibling build pattern proven in `system-
 
 - **Stage 1 (Node):** `node:22` — build the edgecommons TS lib dist (dropping in the type-only
   `@edgecommons/streamlog-node` **stub** after `npm install`, before `tsc`, so the never-used
-  streaming import resolves), then `link:lib` + build edge-console (protocol → server → ui/dist).
-- **Stage 2 (runtime):** `node:22-slim` — add **EMQX** (apt repo) + supervisord + `wait-for-tcp`,
-  copy the whole `/build` tree so `edge-console/` and `edgecommons/` stay siblings, and serve
-  `ui/dist` from the Node server (`component.global.console.ws.webRoot`) — **no nginx/Vite**.
+  streaming import resolves), then `link:lib` + build edge-console (protocol → ui/dist).
+- **Stage 2 (Rust):** `rust:1-bookworm` — build the official `edge-console-gateway` binary against
+  the sibling `core/libs/rust` and `core/proto`.
+- **Stage 3 (Rust):** `rust:1-bookworm` — build the site ConfigComponent binary.
+- **Stage 4 (runtime):** `debian:bookworm-slim` — add **EMQX** (apt repo) + supervisord +
+  `wait-for-tcp`, copy `edge-console-gateway` and `ui/dist`, and serve the UI from the Rust gateway
+  (`component.global.console.ws.webRoot`) — **no nginx/Vite**.
 
 ### Build context & `.dockerignore`
 

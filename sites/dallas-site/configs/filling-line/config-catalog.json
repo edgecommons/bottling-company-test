@@ -37,7 +37,10 @@
           "intervalSecs": 30,
           "measures": {
             "cpu": true,
-            "memory": false
+            "memory": false,
+            "threads": true,
+            "files": true,
+            "fds": true
           }
         },
         "metricEmission": {
@@ -58,7 +61,11 @@
         "heartbeat": {
           "intervalSecs": 15,
           "measures": {
-            "memory": true
+            "cpu": true,
+            "memory": true,
+            "threads": true,
+            "files": true,
+            "fds": true
           }
         }
       }
@@ -75,7 +82,14 @@
           "line": "filling-line"
         },
         "heartbeat": {
-          "intervalSecs": 5
+          "intervalSecs": 5,
+          "measures": {
+            "cpu": true,
+            "memory": true,
+            "threads": true,
+            "files": true,
+            "fds": true
+          }
         }
       }
     }
@@ -206,7 +220,14 @@
           "rust_format": "{timestamp} [{level}] [{component}] {target} - {message}"
         },
         "heartbeat": {
-          "intervalSecs": 10
+          "intervalSecs": 10,
+          "measures": {
+            "cpu": true,
+            "memory": true,
+            "threads": true,
+            "files": true,
+            "fds": true
+          }
         },
         "metricEmission": {
           "namespace": "edgecommons"
@@ -324,7 +345,14 @@
           "rust_format": "{timestamp} [{level}] [{component}] {target} - {message}"
         },
         "heartbeat": {
-          "intervalSecs": 10
+          "intervalSecs": 10,
+          "measures": {
+            "cpu": true,
+            "memory": true,
+            "threads": true,
+            "files": true,
+            "fds": true
+          }
         },
         "metricEmission": {
           "namespace": "edgecommons"
