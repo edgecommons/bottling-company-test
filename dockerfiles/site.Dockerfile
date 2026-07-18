@@ -15,31 +15,18 @@
 # ============================================================================
 
 # ---------------------------------------------------------------------------
-# Stage 1 — build the edgecommons TS lib dist + the edge-console protocol/ui assets.
+# Stage 1 — build the edge-console protocol/ui assets (ui/dist).
 # ---------------------------------------------------------------------------
 FROM node:22 AS console-build
 WORKDIR /build
 
-# Build the sibling edgecommons TS lib (produces libs/ts/dist + its own node_modules). The native
-# streaming addon @edgecommons/streamlog-node is an unpublished OPTIONAL dep. In the monorepo it is
-# declared as workspace:*, which plain npm cannot resolve in this image because only core/libs/ts is
-# copied. The console never uses streaming, so point that optional dependency at the existing
-# type-only stub before npm install. The edgecommons repo on disk is untouched; the package.json
-# mutation lives only in-image.
-COPY core/libs/ts core/libs/ts
-COPY bottling-company-test/dockerfiles/streamlog-node-stub /tmp/streamlog-node-stub
-RUN cd core/libs/ts \
-    && node -e "const fs=require('fs'); const p=require('./package.json'); p.optionalDependencies=p.optionalDependencies||{}; p.optionalDependencies['@edgecommons/streamlog-node']='file:/tmp/streamlog-node-stub'; fs.writeFileSync('package.json', JSON.stringify(p,null,2)+'\n');" \
-    && npm install \
-    && npm run build
-
-# Link the sibling, install workspaces, build protocol -> ui (ui/dist). edge-console's
-# link:lib generates a gitignored stub re-exporting ../../../core/libs/ts/dist, so the
-# sibling MUST stay a built sibling dir of edge-console — the whole /build tree is preserved
-# long enough for the UI build.
+# edge-console no longer depends on the edgecommons TS library — the core-TS-lib link machinery
+# (`link:lib` + the re-export stub) was removed upstream, so the UI build is self-contained: install
+# the workspace deps and build protocol -> ui. The gateway (Stage 2) is the only piece that consumes
+# the Rust core.
 COPY edge-console edge-console
 WORKDIR /build/edge-console
-RUN npm run link:lib && npm install && npm run build -w protocol && npm run build -w ui
+RUN npm install && npm run build -w protocol && npm run build -w ui
 
 # ---------------------------------------------------------------------------
 # Stage 2 — build the Rust edge-console gateway.
