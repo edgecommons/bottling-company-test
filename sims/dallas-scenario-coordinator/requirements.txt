@@ -1,0 +1,4 @@
+# Modbus CLIENT (read the authoritative counts) + OPC UA client (write Kepware Live.* tags).
+# The client APIs are stable in 3.13; only the server datastore was deprecated (not used here).
+pymodbus>=3.13
+asyncua>=1.1
