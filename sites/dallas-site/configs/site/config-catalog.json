@@ -103,6 +103,22 @@
                 "heartbeatIntervalMs": 15000,
                 "webRoot": "/app/edge-console/ui/dist"
               },
+              "apps": [
+                {
+                  "id": "dallas-line-1",
+                  "webRoot": "apps/dallas-operations",
+                  "allowedOrigins": ["http://127.0.0.1:8080"],
+                  "allowedRoles": ["operator"],
+                  "capabilities": ["signals", "alarms"]
+                },
+                {
+                  "id": "dallas-line-2",
+                  "webRoot": "apps/dallas-operations",
+                  "allowedOrigins": ["http://127.0.0.1:8080"],
+                  "allowedRoles": ["operator"],
+                  "capabilities": ["signals", "alarms"]
+                }
+              ],
               "staleness": {
                 "warnMultiplier": 2,
                 "staleMultiplier": 2.5,
