@@ -79,7 +79,7 @@ services:
     environment:
       # External field sources, injected into the config templates at process start (.env-driven).
       KEPWARE_ENDPOINT: "${KEPWARE_ENDPOINT:-opc.tcp://192.168.1.180:49320}"
-      HOST_MODBUS: "${HOST_MODBUS:-192.168.1.224:5020}"
+      HOST_MODBUS: "${HOST_MODBUS:-192.168.1.224:5021}"
     extra_hosts:
       # So KEPWARE_ENDPOINT / HOST_MODBUS may point at host.docker.internal for on-host sources.
       - "host.docker.internal:host-gateway"
