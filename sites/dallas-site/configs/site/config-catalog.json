@@ -117,6 +117,13 @@
                   "allowedOrigins": ["http://127.0.0.1:8080"],
                   "allowedRoles": ["operator"],
                   "capabilities": ["signals", "alarms"]
+                },
+                {
+                  "id": "tv-board",
+                  "webRoot": "apps/tv-board",
+                  "allowedOrigins": ["http://127.0.0.1:8080", "http://192.168.1.224:8080", "file://"],
+                  "allowedRoles": ["operator"],
+                  "capabilities": ["signals", "alarms"]
                 }
               ],
               "staleness": {

@@ -36,7 +36,7 @@ services:
       - ./configs/site:/config:ro
       - ./supervisor/site.conf:/etc/supervisor/supervisord.conf:ro
     ports:
-      - "127.0.0.1:${CONSOLE_PORT:-8080}:8443" # edge-console UI + WS (self-served, no nginx)
+      - "${CONSOLE_HOST:-0.0.0.0}:${CONSOLE_PORT:-8080}:8443" # edge-console UI + WS (LAN-exposed so TV/Tizen clients can reach the tv-board app; set CONSOLE_HOST=127.0.0.1 to bind localhost only)
       - "${SITE_BROKER_PORT:-18830}:1883"     # site EMQX (MQTTX/debug; internal port is 1883)
       - "${SITE_DASHBOARD_PORT:-18084}:18083" # site EMQX dashboard (remapped off 18083 — the
                                               # standing edgecommons-emqx already publishes 18083)
