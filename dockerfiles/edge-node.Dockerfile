@@ -121,7 +121,7 @@ RUN python3 -m venv /opt/simenv \
 # renderers (host:port / endpoint / creds -> /run/config, kept out of the supervisord command
 # line because '%' is a supervisord sigil).
 COPY bottling-company-test/dockerfiles/bin/ /usr/local/bin/
-RUN chmod +x /usr/local/bin/wait-for-tcp /usr/local/bin/render-opcua-config /usr/local/bin/render-modbus-config /usr/local/bin/render-packaging-catalog
+RUN chmod +x /usr/local/bin/wait-for-tcp
 
 # Pipeline scratch dirs (telemetry writes /out/archive; file-replicator reads it and archives
 # to /out/_archived — both in THIS container now, no shared volume needed) + the render dir +

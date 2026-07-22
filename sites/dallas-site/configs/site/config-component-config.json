@@ -1,6 +1,10 @@
 {
   "hierarchy": {
-    "levels": ["enterprise", "site", "device"]
+    "levels": [
+      "enterprise",
+      "site",
+      "device"
+    ]
   },
   "identity": {
     "enterprise": "bottles-r-us",
@@ -8,16 +12,17 @@
   },
   "tags": {
     "appId": "bottling-plant",
+    "scenario": "bottling-company-test",
     "componentRole": "configuration"
   },
   "logging": {
     "level": "INFO",
-    "rust_format": "{timestamp} [{level}] [{component}] {target} - {message}",
     "publish": {
       "enabled": true,
       "destination": "local",
       "minLevel": "INFO"
-    }
+    },
+    "rust_format": "{timestamp} [{level}] [{component}] {target} - {message}"
   },
   "heartbeat": {
     "enabled": true,

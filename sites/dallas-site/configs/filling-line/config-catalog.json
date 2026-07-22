@@ -6,7 +6,12 @@
     "uri": "/config/config-catalog.json"
   },
   "hierarchy": {
-    "levels": ["enterprise", "site", "line", "device"]
+    "levels": [
+      "enterprise",
+      "site",
+      "line",
+      "device"
+    ]
   },
   "nodes": {
     "enterprise/bottles-r-us": {
@@ -15,7 +20,12 @@
       },
       "config": {
         "hierarchy": {
-          "levels": ["enterprise", "site", "line", "device"]
+          "levels": [
+            "enterprise",
+            "site",
+            "line",
+            "device"
+          ]
         },
         "identity": {
           "enterprise": "bottles-r-us"
@@ -126,7 +136,9 @@
                 "batchMs": 500
               },
               "writes": {
-                "allow": ["ns=2;s=Setpoint"]
+                "allow": [
+                  "ns=2;s=Setpoint"
+                ]
               },
               "subscriptions": [
                 {
@@ -205,17 +217,75 @@
                       "type": "uint16",
                       "scale": 0.1
                     },
-                    { "name": "GoodBottleCount", "table": "holding", "address": 50, "type": "uint32" },
-                    { "name": "RejectCount", "table": "holding", "address": 52, "type": "uint32" },
-                    { "name": "UnderfillRejectCount", "table": "holding", "address": 54, "type": "uint32" },
-                    { "name": "OverfillRejectCount", "table": "holding", "address": 56, "type": "uint32" },
-                    { "name": "CapRejectCount", "table": "holding", "address": 58, "type": "uint32" },
-                    { "name": "ConveyorSpeedPct", "table": "holding", "address": 60, "type": "uint16", "scale": 0.1 },
-                    { "name": "BowlLevelPct", "table": "holding", "address": 61, "type": "uint16", "scale": 0.1 },
-                    { "name": "ProductTempC", "table": "holding", "address": 62, "type": "int16", "scale": 0.1 },
-                    { "name": "ConveyorRunning", "table": "discrete", "address": 0, "type": "bool" },
-                    { "name": "InfeedStarved", "table": "discrete", "address": 1, "type": "bool" },
-                    { "name": "EStopHealthy", "table": "discrete", "address": 2, "type": "bool" }
+                    {
+                      "name": "GoodBottleCount",
+                      "table": "holding",
+                      "address": 50,
+                      "type": "uint32"
+                    },
+                    {
+                      "name": "RejectCount",
+                      "table": "holding",
+                      "address": 52,
+                      "type": "uint32"
+                    },
+                    {
+                      "name": "UnderfillRejectCount",
+                      "table": "holding",
+                      "address": 54,
+                      "type": "uint32"
+                    },
+                    {
+                      "name": "OverfillRejectCount",
+                      "table": "holding",
+                      "address": 56,
+                      "type": "uint32"
+                    },
+                    {
+                      "name": "CapRejectCount",
+                      "table": "holding",
+                      "address": 58,
+                      "type": "uint32"
+                    },
+                    {
+                      "name": "ConveyorSpeedPct",
+                      "table": "holding",
+                      "address": 60,
+                      "type": "uint16",
+                      "scale": 0.1
+                    },
+                    {
+                      "name": "BowlLevelPct",
+                      "table": "holding",
+                      "address": 61,
+                      "type": "uint16",
+                      "scale": 0.1
+                    },
+                    {
+                      "name": "ProductTempC",
+                      "table": "holding",
+                      "address": 62,
+                      "type": "int16",
+                      "scale": 0.1
+                    },
+                    {
+                      "name": "ConveyorRunning",
+                      "table": "discrete",
+                      "address": 0,
+                      "type": "bool"
+                    },
+                    {
+                      "name": "InfeedStarved",
+                      "table": "discrete",
+                      "address": 1,
+                      "type": "bool"
+                    },
+                    {
+                      "name": "EStopHealthy",
+                      "table": "discrete",
+                      "address": 2,
+                      "type": "bool"
+                    }
                   ]
                 }
               ]
@@ -261,18 +331,66 @@
                 "rows": {
                   "explode": "body.samples",
                   "columns": [
-                    { "name": "device", "path": "body.device", "type": "string" },
-                    { "name": "component", "path": "body.component", "type": "string" },
-                    { "name": "signal", "path": "body.signalName", "type": "string" },
-                    { "name": "unit", "path": "body.unit", "type": "string" },
-                    { "name": "rawValue", "path": "body.samples[].value", "type": "double" },
-                    { "name": "engValue", "path": "body.samples[].engValue", "type": "double" },
-                    { "name": "quality", "path": "body.samples[].quality", "type": "string" },
-                    { "name": "messageTs", "path": "body.messageTs", "type": "string" },
-                    { "name": "serverTs", "path": "body.samples[].server_ts", "type": "string" },
-                    { "name": "sourceTs", "path": "body.samples[].source_ts", "type": "string" },
-                    { "name": "rate", "path": "body.rate", "type": "double" },
-                    { "name": "alarm", "path": "body.alarm", "type": "bool" }
+                    {
+                      "name": "device",
+                      "path": "body.device",
+                      "type": "string"
+                    },
+                    {
+                      "name": "component",
+                      "path": "body.component",
+                      "type": "string"
+                    },
+                    {
+                      "name": "signal",
+                      "path": "body.signalName",
+                      "type": "string"
+                    },
+                    {
+                      "name": "unit",
+                      "path": "body.unit",
+                      "type": "string"
+                    },
+                    {
+                      "name": "rawValue",
+                      "path": "body.samples[].value",
+                      "type": "double"
+                    },
+                    {
+                      "name": "engValue",
+                      "path": "body.samples[].engValue",
+                      "type": "double"
+                    },
+                    {
+                      "name": "quality",
+                      "path": "body.samples[].quality",
+                      "type": "string"
+                    },
+                    {
+                      "name": "messageTs",
+                      "path": "body.messageTs",
+                      "type": "string"
+                    },
+                    {
+                      "name": "serverTs",
+                      "path": "body.samples[].server_ts",
+                      "type": "string"
+                    },
+                    {
+                      "name": "sourceTs",
+                      "path": "body.samples[].source_ts",
+                      "type": "string"
+                    },
+                    {
+                      "name": "rate",
+                      "path": "body.rate",
+                      "type": "double"
+                    },
+                    {
+                      "name": "alarm",
+                      "path": "body.alarm",
+                      "type": "bool"
+                    }
                   ]
                 }
               },
@@ -306,7 +424,9 @@
           "instances": [
             {
               "id": "downsample-local",
-              "subscribe": ["ecv1/+/+/+/data/#"],
+              "subscribe": [
+                "ecv1/+/+/+/data/#"
+              ],
               "pipeline": [
                 {
                   "filter": {
@@ -327,7 +447,9 @@
             },
             {
               "id": "archive",
-              "subscribe": ["ecv1/+/+/+/data/#"],
+              "subscribe": [
+                "ecv1/+/+/+/data/#"
+              ],
               "pipeline": [
                 {
                   "filter": {
@@ -347,51 +469,143 @@
             },
             {
               "id": "oee-availability",
-              "subscribe": ["ecv1/{ThingName}/opcua-adapter/filler1/data/#"],
+              "subscribe": [
+                "ecv1/{ThingName}/opcua-adapter/filler1/data/#"
+              ],
               "pipeline": [
-                { "filter": { "quality": "GOOD" } },
-                { "filter": { "field": "body.signal.name", "op": "eq", "value": "OeeShiftSnapshot" } },
-                { "sample": { "everyMs": 1000, "by": "body.signal.id" } },
-                { "script": { "file": "oee/availability.lua" } }
+                {
+                  "filter": {
+                    "quality": "GOOD"
+                  }
+                },
+                {
+                  "filter": {
+                    "field": "body.signal.name",
+                    "op": "eq",
+                    "value": "OeeShiftSnapshot"
+                  }
+                },
+                {
+                  "sample": {
+                    "everyMs": 1000,
+                    "by": "body.signal.id"
+                  }
+                },
+                {
+                  "script": {
+                    "file": "oee/availability.lua"
+                  }
+                }
               ],
               "target": "local",
-              "publish": { "topic": "ecv1/{ThingName}/telemetry-processor/main/data/gemba/oee/availability" }
+              "publish": {
+                "topic": "ecv1/{ThingName}/telemetry-processor/main/data/gemba/oee/availability"
+              }
             },
             {
               "id": "oee-performance",
-              "subscribe": ["ecv1/{ThingName}/opcua-adapter/filler1/data/#"],
+              "subscribe": [
+                "ecv1/{ThingName}/opcua-adapter/filler1/data/#"
+              ],
               "pipeline": [
-                { "filter": { "quality": "GOOD" } },
-                { "filter": { "field": "body.signal.name", "op": "eq", "value": "OeeShiftSnapshot" } },
-                { "sample": { "everyMs": 1000, "by": "body.signal.id" } },
-                { "script": { "file": "oee/performance.lua" } }
+                {
+                  "filter": {
+                    "quality": "GOOD"
+                  }
+                },
+                {
+                  "filter": {
+                    "field": "body.signal.name",
+                    "op": "eq",
+                    "value": "OeeShiftSnapshot"
+                  }
+                },
+                {
+                  "sample": {
+                    "everyMs": 1000,
+                    "by": "body.signal.id"
+                  }
+                },
+                {
+                  "script": {
+                    "file": "oee/performance.lua"
+                  }
+                }
               ],
               "target": "local",
-              "publish": { "topic": "ecv1/{ThingName}/telemetry-processor/main/data/gemba/oee/performance" }
+              "publish": {
+                "topic": "ecv1/{ThingName}/telemetry-processor/main/data/gemba/oee/performance"
+              }
             },
             {
               "id": "oee-quality",
-              "subscribe": ["ecv1/{ThingName}/opcua-adapter/filler1/data/#"],
+              "subscribe": [
+                "ecv1/{ThingName}/opcua-adapter/filler1/data/#"
+              ],
               "pipeline": [
-                { "filter": { "quality": "GOOD" } },
-                { "filter": { "field": "body.signal.name", "op": "eq", "value": "OeeShiftSnapshot" } },
-                { "sample": { "everyMs": 1000, "by": "body.signal.id" } },
-                { "script": { "file": "oee/quality.lua" } }
+                {
+                  "filter": {
+                    "quality": "GOOD"
+                  }
+                },
+                {
+                  "filter": {
+                    "field": "body.signal.name",
+                    "op": "eq",
+                    "value": "OeeShiftSnapshot"
+                  }
+                },
+                {
+                  "sample": {
+                    "everyMs": 1000,
+                    "by": "body.signal.id"
+                  }
+                },
+                {
+                  "script": {
+                    "file": "oee/quality.lua"
+                  }
+                }
               ],
               "target": "local",
-              "publish": { "topic": "ecv1/{ThingName}/telemetry-processor/main/data/gemba/oee/quality" }
+              "publish": {
+                "topic": "ecv1/{ThingName}/telemetry-processor/main/data/gemba/oee/quality"
+              }
             },
             {
               "id": "oee-overall",
-              "subscribe": ["ecv1/{ThingName}/opcua-adapter/filler1/data/#"],
+              "subscribe": [
+                "ecv1/{ThingName}/opcua-adapter/filler1/data/#"
+              ],
               "pipeline": [
-                { "filter": { "quality": "GOOD" } },
-                { "filter": { "field": "body.signal.name", "op": "eq", "value": "OeeShiftSnapshot" } },
-                { "sample": { "everyMs": 1000, "by": "body.signal.id" } },
-                { "script": { "file": "oee/oee.lua" } }
+                {
+                  "filter": {
+                    "quality": "GOOD"
+                  }
+                },
+                {
+                  "filter": {
+                    "field": "body.signal.name",
+                    "op": "eq",
+                    "value": "OeeShiftSnapshot"
+                  }
+                },
+                {
+                  "sample": {
+                    "everyMs": 1000,
+                    "by": "body.signal.id"
+                  }
+                },
+                {
+                  "script": {
+                    "file": "oee/oee.lua"
+                  }
+                }
               ],
               "target": "local",
-              "publish": { "topic": "ecv1/{ThingName}/telemetry-processor/main/data/gemba/oee/overall" }
+              "publish": {
+                "topic": "ecv1/{ThingName}/telemetry-processor/main/data/gemba/oee/overall"
+              }
             }
           ]
         }
@@ -436,8 +650,12 @@
               "ingress": {
                 "path": "/out/archive",
                 "recursive": true,
-                "include": ["**/*.parquet"],
-                "exclude": ["**/*.inprogress"],
+                "include": [
+                  "**/*.parquet"
+                ],
+                "exclude": [
+                  "**/*.inprogress"
+                ],
                 "readiness": {
                   "strategy": "stability",
                   "quietSecs": 3
@@ -490,8 +708,12 @@
               },
               "uplink": {
                 "classes": {
-                  "state": { "enabled": true },
-                  "cfg": { "enabled": true },
+                  "state": {
+                    "enabled": true
+                  },
+                  "cfg": {
+                    "enabled": true
+                  },
                   "evt": {
                     "enabled": true,
                     "bufferWhileDisconnected": {
@@ -511,7 +733,9 @@
                     "enabled": true,
                     "maxRatePerSec": 50
                   },
-                  "app": { "enabled": false }
+                  "app": {
+                    "enabled": false
+                  }
                 }
               },
               "reply": {
