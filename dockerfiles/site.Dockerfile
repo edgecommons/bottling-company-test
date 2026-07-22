@@ -78,6 +78,10 @@ RUN apt-get update \
 
 # Built console UI + Rust gateway.
 COPY --from=console-build /build/edge-console/ui/dist /app/edge-console/ui/dist
+# Gemba multi-app boards (static): served concurrently with the generic console at /apps/{id}/ via
+# component.global.console.apps. webRoot "apps/dallas-operations" resolves under the gateway's cwd
+# (/app/edge-console). The dallas-operations board adapts to line-1/line-2 by its route/appId.
+COPY --from=console-build /build/edge-console/experiments/gemba/apps /app/edge-console/apps
 COPY --from=console-gateway-build /build/edge-console/target/release/edge-console-gateway /usr/local/bin/edge-console-gateway
 COPY --from=config-build /build/config-component/target/release/config-component /usr/local/bin/config-component
 

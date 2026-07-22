@@ -1,0 +1,5 @@
+# Runs an OPC UA server (asyncua) and a Modbus server (pymodbus classic setValues, 3.6.9 — 3.13
+# deprecated that datastore API) in one process. Isolated in its own venv inside the edge-node image
+# so it never perturbs the modbus-adapter's pymodbus.
+pymodbus==3.6.9
+asyncua>=1.1

@@ -1,0 +1,4 @@
+# Pinned to the classic ModbusSlaveContext datastore API (setValues drives read-only input/discrete
+# registers reliably). pymodbus 3.13 deprecated that path in favour of SimData/SimDevice; this sim
+# runs in its own image, so it pins the well-understood classic API rather than tracking that churn.
+pymodbus==3.6.9

@@ -110,6 +110,13 @@ COPY modbus-adapter/modbus_adapter /app/modbus/modbus_adapter
 COPY opcua-adapter/validation/opcua_sim_server.py /opt/sims/opcua_sim_server.py
 COPY modbus-adapter/validation/modbus_sim_server.py /opt/sims/modbus_sim_server.py
 
+# Dallas-owned filling-line field sim (OPC UA :4840 + Modbus :5020 in ONE process, shared scenario —
+# SIMULATOR_CONFIGURATION.md "Line 1"). It runs from its OWN venv pinned to pymodbus 3.6.9 (classic
+# setValues, which 3.13 deprecated) so it never perturbs the modbus-adapter's pymodbus in /opt/pyenv.
+COPY bottling-company-test/sims/dallas-filling-sim/sim.py /opt/sims/dallas_filling_sim.py
+RUN python3 -m venv /opt/simenv \
+ && /opt/simenv/bin/pip install --no-cache-dir "pymodbus==3.6.9" "asyncua>=1.1"
+
 # Launcher helpers: wait-for-tcp (the EMQX/sim readiness gate) + the packaging template
 # renderers (host:port / endpoint / creds -> /run/config, kept out of the supervisord command
 # line because '%' is a supervisord sigil).

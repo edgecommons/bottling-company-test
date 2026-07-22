@@ -176,12 +176,85 @@
                   "pollIntervalMs": 500,
                   "publishMode": "always",
                   "signals": [
-                    { "name": "CaseCount", "table": "input", "address": 0, "type": "uint16" },
+                    { "name": "GoodCaseCount", "table": "input", "address": 0, "type": "uint32" },
+                    { "name": "CaseRejectCount", "table": "input", "address": 2, "type": "uint32" },
+                    { "name": "PackerMotorCurrentA", "table": "input", "address": 4, "type": "uint16", "scale": 0.01 },
+                    { "name": "CaseWeightKg", "table": "input", "address": 5, "type": "uint16", "scale": 0.01 },
+                    { "name": "CaseRateCpm", "table": "input", "address": 6, "type": "uint16", "scale": 0.1 },
+                    { "name": "CartonMagazinePct", "table": "input", "address": 7, "type": "uint16", "scale": 0.1 },
                     { "name": "JamStatus", "table": "discrete", "address": 0, "type": "bool" },
+                    { "name": "MagazineLow", "table": "discrete", "address": 1, "type": "bool" },
+                    { "name": "CaseAtDischarge", "table": "discrete", "address": 2, "type": "bool" },
+                    { "name": "EStopHealthy", "table": "discrete", "address": 3, "type": "bool" },
                     { "name": "RunCommand", "table": "coil", "address": 0, "type": "bool" }
                   ]
                 }
               ]
+            }
+          ]
+        }
+      }
+    },
+    "TelemetryProcessor": {
+      "parent": "line/packaging-line",
+      "config": {
+        "component": {
+          "token": "telemetry-processor",
+          "global": {
+            "defaults": {
+              "key": "body.signal.id",
+              "scriptEngine": "lua",
+              "scriptsDir": "/scripts"
+            }
+          },
+          "instances": [
+            {
+              "id": "oee-availability",
+              "subscribe": ["ecv1/{ThingName}/opcua-adapter/palletizer1/data/#"],
+              "pipeline": [
+                { "filter": { "quality": "GOOD" } },
+                { "filter": { "field": "body.signal.name", "op": "eq", "value": "OeeShiftSnapshot" } },
+                { "sample": { "everyMs": 1000, "by": "body.signal.id" } },
+                { "script": { "file": "oee/availability.lua" } }
+              ],
+              "target": "local",
+              "publish": { "topic": "ecv1/{ThingName}/telemetry-processor/main/data/gemba/oee/availability" }
+            },
+            {
+              "id": "oee-performance",
+              "subscribe": ["ecv1/{ThingName}/opcua-adapter/palletizer1/data/#"],
+              "pipeline": [
+                { "filter": { "quality": "GOOD" } },
+                { "filter": { "field": "body.signal.name", "op": "eq", "value": "OeeShiftSnapshot" } },
+                { "sample": { "everyMs": 1000, "by": "body.signal.id" } },
+                { "script": { "file": "oee/performance.lua" } }
+              ],
+              "target": "local",
+              "publish": { "topic": "ecv1/{ThingName}/telemetry-processor/main/data/gemba/oee/performance" }
+            },
+            {
+              "id": "oee-quality",
+              "subscribe": ["ecv1/{ThingName}/opcua-adapter/palletizer1/data/#"],
+              "pipeline": [
+                { "filter": { "quality": "GOOD" } },
+                { "filter": { "field": "body.signal.name", "op": "eq", "value": "OeeShiftSnapshot" } },
+                { "sample": { "everyMs": 1000, "by": "body.signal.id" } },
+                { "script": { "file": "oee/quality.lua" } }
+              ],
+              "target": "local",
+              "publish": { "topic": "ecv1/{ThingName}/telemetry-processor/main/data/gemba/oee/quality" }
+            },
+            {
+              "id": "oee-overall",
+              "subscribe": ["ecv1/{ThingName}/opcua-adapter/palletizer1/data/#"],
+              "pipeline": [
+                { "filter": { "quality": "GOOD" } },
+                { "filter": { "field": "body.signal.name", "op": "eq", "value": "OeeShiftSnapshot" } },
+                { "sample": { "everyMs": 1000, "by": "body.signal.id" } },
+                { "script": { "file": "oee/oee.lua" } }
+              ],
+              "target": "local",
+              "publish": { "topic": "ecv1/{ThingName}/telemetry-processor/main/data/gemba/oee/overall" }
             }
           ]
         }

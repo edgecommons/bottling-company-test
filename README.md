@@ -3,7 +3,15 @@
 A `docker compose` harness that stands up the whole EdgeCommons Unified Namespace (UNS) stack
 for a fictional **beverage bottling plant** at site **`dallas`** — field sims → protocol
 adapters → telemetry processing (Lua transform → Parquet) → file replication → per-line UNS
-bridges → site broker → **edge-console** in the browser (Java · Python · Rust · TypeScript).
+bridges → site broker → **edge-console** in the browser (Java · Python · Rust · TypeScript),
+and onward to purpose-built line boards, including a **native Android TV** filling-line OEE board.
+
+> **New here?** The end-to-end
+> [Dallas line demo](https://docs.edgecommons.mbreissi.com/guides/dallas-line-demo/) on the docs site
+> walks the whole stack — sims → site configs / OEE Lua → this compose harness → edge-console → the TV
+> boards. Component detail lives beside the code: the [site layout](sites/dallas-site/README.md), the
+> [filling-line sim](sims/dallas-filling-sim/README.md), the [packaging host Modbus sim](sims/dallas-packaging-modbus/README.md),
+> and the [scenario coordinator](sims/dallas-scenario-coordinator/README.md).
 
 It is the canonical system-test harness for the EdgeCommons org. It supersedes the older
 `../system-test/` layout by keeping the same scenario and proven build machinery while making
