@@ -97,7 +97,7 @@ COPY --from=rust-build /build/uns-bridge/target/release/uns-bridge /usr/local/bi
 COPY --from=rust-build /build/config-component/target/release/config-component /usr/local/bin/config-component
 
 # Java OPC UA adapter jar (from stage 1).
-COPY --from=java-build /build/opcua-adapter/target/OpcUaAdapter-1.0.0.jar /app/opcua/app.jar
+COPY --from=java-build /build/opcua-adapter/target/opcua-adapter-1.0.0.jar /app/opcua/app.jar
 
 # Python Modbus adapter source (runs as `python main.py`, importing the local modbus_adapter).
 COPY modbus-adapter/main.py /app/modbus/main.py
