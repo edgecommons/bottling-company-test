@@ -63,3 +63,19 @@ docker compose -f sites/dallas-site/docker-compose.yml up -d --build
 (or the repository README's `Run it` recipe for the whole plant). The filling-line OEE surfaces on the
 edge-console and the native Android TV Line 01 board; see the end-to-end
 [Dallas line demo](https://docs.edgecommons.mbreissi.com/guides/dallas-line-demo/).
+
+## Generated configuration - do not hand-edit
+
+Everything under `configs/` and `supervisor/` is **generated** by the Deployment Studio kernel
+(`ec-deploy`, in the local `deployment-studio/` repo) from the Dallas golden fixture
+(`deployment-studio/fixtures/dallas/definition.yaml` + `layers/` + `bindings/local.json`).
+
+To change anything here - endpoints, components, config values, start order - edit the fixture
+(external endpoints live in `bindings/local.json`), then re-render and copy:
+
+    cd ../deployment-studio/kernel
+    cargo run -- render ../fixtures/dallas/definition.yaml --environment local --out /tmp/render
+
+The old `config-catalog.tmpl.json` + `render-packaging-catalog` startup substitution is gone:
+binding values are resolved at render time, and the packaging catalog is a static rendered file
+mounted at the path the bootstrap's catalogSource declares.

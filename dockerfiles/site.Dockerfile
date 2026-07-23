@@ -87,7 +87,7 @@ COPY --from=config-build /build/config-component/target/release/config-component
 
 # wait-for-tcp readiness gate (the console waits for the local EMQX before connecting).
 COPY bottling-company-test/dockerfiles/bin/ /usr/local/bin/
-RUN chmod +x /usr/local/bin/wait-for-tcp /usr/local/bin/render-opcua-config /usr/local/bin/render-modbus-config /usr/local/bin/render-packaging-catalog
+RUN chmod +x /usr/local/bin/wait-for-tcp
 
 # supervisord is PID 1; site.conf is bind-mounted by compose at /etc/supervisor/supervisord.conf.
 ENTRYPOINT ["supervisord"]
