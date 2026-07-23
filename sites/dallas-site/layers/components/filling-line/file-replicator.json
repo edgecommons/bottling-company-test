@@ -1,0 +1,71 @@
+{
+  "logging": {
+    "rust_format": "{timestamp} [{level}] [{component}] {target} - {message}"
+  },
+  "heartbeat": {
+    "intervalSecs": 10,
+    "measures": {
+      "cpu": true,
+      "memory": true,
+      "threads": true,
+      "files": true,
+      "fds": true
+    }
+  },
+  "metricEmission": {
+    "namespace": "edgecommons"
+  },
+  "component": {
+    "token": "file-replicator",
+    "global": {
+      "defaults": {
+        "retry": {
+          "baseDelayMs": 1000,
+          "maxDelayMs": 900000,
+          "giveUpAfter": "7d"
+        }
+      },
+      "limits": {
+        "maxConcurrentFiles": 8
+      }
+    },
+    "instances": [
+      {
+        "id": "archive-to-replicated",
+        "ingress": {
+          "path": "/out/archive",
+          "recursive": true,
+          "include": [
+            "**/*.parquet"
+          ],
+          "exclude": [
+            "**/*.inprogress"
+          ],
+          "readiness": {
+            "strategy": "stability",
+            "quietSecs": 3
+          }
+        },
+        "egress": [
+          {
+            "type": "local",
+            "path": "/mnt/replicated",
+            "fsync": true
+          }
+        ],
+        "schedule": {
+          "mode": "immediate"
+        },
+        "completion": {
+          "onSuccess": "archive",
+          "archiveDir": "/out/_archived",
+          "onExhausted": "retainInPlace",
+          "verify": "checksum"
+        },
+        "limits": {
+          "maxConcurrentFiles": 4
+        }
+      }
+    ]
+  }
+}

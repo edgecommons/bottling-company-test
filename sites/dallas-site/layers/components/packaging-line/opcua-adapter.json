@@ -1,0 +1,43 @@
+{
+  "metricEmission": {
+    "targetConfig": {
+      "destination": "local"
+    }
+  },
+  "component": {
+    "token": "opcua-adapter",
+    "global": {
+      "defaults": {
+        "publishIntervalMs": 500,
+        "samplingRateMs": 200,
+        "queueSize": 20
+      }
+    },
+    "instances": [
+      {
+        "id": "palletizer1",
+        "connection": {
+          "endpoint": "${binding:external.kepware.endpoint}",
+          "securityPolicy": "None"
+        },
+        "publish": {
+          "batchMs": 0
+        },
+        "subscriptions": [
+          {
+            "id": "live",
+            "include": [
+              {
+                "namespaceUri": "Kepware Server",
+                "match": "^GGCommonsTest\\.Device1\\.Live.*",
+                "samplingRateMs": 200,
+                "queueSize": 20
+              }
+            ],
+            "exclude": []
+          }
+        ]
+      }
+    ]
+  }
+}

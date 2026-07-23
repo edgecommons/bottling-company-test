@@ -1,0 +1,110 @@
+{
+  "component": {
+    "token": "modbus-adapter",
+    "global": {
+      "defaults": {
+        "pollIntervalMs": 500,
+        "publishMode": "always",
+        "batchMs": 0,
+        "maxGap": 4
+      }
+    },
+    "instances": [
+      {
+        "id": "casepacker1",
+        "connection": {
+          "transport": "tcp",
+          "host": "${binding:external.hostModbus.host}",
+          "port": "${binding:external.hostModbus.port}",
+          "unitId": 1,
+          "timeoutMs": 1000
+        },
+        "publish": {
+          "batchMs": 0
+        },
+        "write": {
+          "enabled": false
+        },
+        "pollGroups": [
+          {
+            "id": "main",
+            "pollIntervalMs": 500,
+            "publishMode": "always",
+            "signals": [
+              {
+                "name": "GoodCaseCount",
+                "table": "input",
+                "address": 0,
+                "type": "uint32"
+              },
+              {
+                "name": "CaseRejectCount",
+                "table": "input",
+                "address": 2,
+                "type": "uint32"
+              },
+              {
+                "name": "PackerMotorCurrentA",
+                "table": "input",
+                "address": 4,
+                "type": "uint16",
+                "scale": 0.01
+              },
+              {
+                "name": "CaseWeightKg",
+                "table": "input",
+                "address": 5,
+                "type": "uint16",
+                "scale": 0.01
+              },
+              {
+                "name": "CaseRateCpm",
+                "table": "input",
+                "address": 6,
+                "type": "uint16",
+                "scale": 0.1
+              },
+              {
+                "name": "CartonMagazinePct",
+                "table": "input",
+                "address": 7,
+                "type": "uint16",
+                "scale": 0.1
+              },
+              {
+                "name": "JamStatus",
+                "table": "discrete",
+                "address": 0,
+                "type": "bool"
+              },
+              {
+                "name": "MagazineLow",
+                "table": "discrete",
+                "address": 1,
+                "type": "bool"
+              },
+              {
+                "name": "CaseAtDischarge",
+                "table": "discrete",
+                "address": 2,
+                "type": "bool"
+              },
+              {
+                "name": "EStopHealthy",
+                "table": "discrete",
+                "address": 3,
+                "type": "bool"
+              },
+              {
+                "name": "RunCommand",
+                "table": "coil",
+                "address": 0,
+                "type": "bool"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

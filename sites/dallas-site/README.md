@@ -30,6 +30,9 @@ edge-console. The filling line is fully self-contained (its OPC UA + Modbus sour
 
 | Path | What it is |
 |------|-----------|
+| `definition.yaml` | **The source of truth.** The `DeploymentDefinition` this site compiles from — its hierarchy, nodes, and which components run where. Everything under `configs/` and `supervisor/` is rendered from this. |
+| `bindings/local.json` | Environment values the definition references by `${binding:…}` (external endpoints — Kepware, the host Modbus sim). The answered half of the IaC handshake. |
+| `layers/` | The hierarchical config layers the definition merges — per scope (`scopes/`), per component (`components/`), and the config-source provider (`provider/`). |
 | `docker-compose.yml` | The site stack — site node + the two line `edge-node` containers + brokers. |
 | `supervisor/*.conf` | The supervised process set inside each container (`site.conf`, `filling-line.conf`, `packaging-line.conf`). |
 | `configs/site/` | Site node: the config-component catalog + `console-messaging.json` (the console's broker binding). |
@@ -64,17 +67,22 @@ docker compose -f sites/dallas-site/docker-compose.yml up -d --build
 edge-console and the native Android TV Line 01 board; see the end-to-end
 [Dallas line demo](https://docs.edgecommons.mbreissi.com/guides/dallas-line-demo/).
 
-## Generated configuration - do not hand-edit
+## Generated configuration — do not hand-edit
 
-Everything under `configs/` and `supervisor/` is **generated** by the Deployment Studio kernel
-(`ec-deploy`, in the local `deployment-studio/` repo) from the Dallas golden fixture
-(`deployment-studio/fixtures/dallas/definition.yaml` + `layers/` + `bindings/local.json`).
+Everything under `configs/` and `supervisor/` is **rendered** from `definition.yaml` (plus its
+`layers/` and `bindings/local.json`) by the `edgecommons` deployment renderer. The definition is the
+source of truth; the config sources are its output. A hand edit to a generated file is drift, and the
+`config-drift-gate` workflow catches it on every PR by rendering the definition and diffing.
 
-To change anything here - endpoints, components, config values, start order - edit the fixture
-(external endpoints live in `bindings/local.json`), then re-render and copy:
+To change anything here — endpoints, components, config values, start order — edit the definition or
+its layers (external endpoints live in `bindings/local.json`), then re-render in place:
 
-    cd ../deployment-studio/kernel
-    cargo run -- render ../fixtures/dallas/definition.yaml --environment local --out /tmp/render
+    edgecommons deployment render sites/dallas-site/definition.yaml --env local --target HOST
+
+That writes `sites/dallas-site/render/host/<node>/…`; copy each node's files onto its config subdir
+(`dallas-console` → `configs/site/` + `supervisor/site.conf`, `gw-fill-01` → `configs/filling-line/`,
+`gw-pack-01` → `configs/packaging-line/`) and commit. `render/` is gitignored. The Lua under
+`configs/lua/` is hand-authored (referenced by the telemetry-processor config) and is not rendered.
 
 The old `config-catalog.tmpl.json` + `render-packaging-catalog` startup substitution is gone:
 binding values are resolved at render time, and the packaging catalog is a static rendered file

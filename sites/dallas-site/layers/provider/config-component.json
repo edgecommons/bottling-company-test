@@ -1,0 +1,27 @@
+{
+  "tags": {
+    "componentRole": "configuration"
+  },
+  "logging": {
+    "rust_format": "{timestamp} [{level}] [{component}] {target} - {message}"
+  },
+  "component": {
+    "token": "edgecommons-config-component",
+    "global": {
+      "configComponent": {
+        "catalogSource": {
+          "type": "file",
+          "path": "${provider:catalog.path}",
+          "watch": true
+        },
+        "pushOnCatalogReload": true,
+        "allowVolatileCatalogUpdates": true
+      }
+    },
+    "instances": [
+      {
+        "id": "main"
+      }
+    ]
+  }
+}
