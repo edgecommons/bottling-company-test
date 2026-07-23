@@ -33,8 +33,13 @@ from pymodbus.client import ModbusTcpClient
 MODBUS_HOST = os.environ.get("MODBUS_HOST", "192.168.1.224")
 MODBUS_PORT = int(os.environ.get("MODBUS_PORT", "5021"))
 KEP_ENDPOINT = os.environ.get("KEPWARE_ENDPOINT", "opc.tcp://192.168.1.180:49320")
-KEP_USER = os.environ.get("KEPWARE_USER", "testuser")
-KEP_PASS = os.environ.get("KEPWARE_PASS", "Password1234567")
+KEP_USER = os.environ.get("KEPWARE_USER")
+KEP_PASS = os.environ.get("KEPWARE_PASS")
+if not KEP_USER or not KEP_PASS:
+    raise SystemExit(
+        "KEPWARE_USER and KEPWARE_PASS must be set in the environment "
+        "(see ../../.env.example); credentials are never defaulted in source."
+    )
 
 NS = 2  # "Kepware Server" namespace
 BASE = "GGCommonsTest.Device1.Live"

@@ -28,10 +28,12 @@ Modbus counts always agree — including across a jam (pallet progress pauses, s
 
 ```bash
 docker build -t dallas-scenario-coordinator:latest sims/dallas-scenario-coordinator
+# KEPWARE_USER / KEPWARE_PASS come from the repo-root .env (gitignored; see .env.example).
+source .env
 docker run -d --restart unless-stopped --name dallas-scenario-coordinator \
   -e MODBUS_HOST=192.168.1.224 -e MODBUS_PORT=5021 \
   -e KEPWARE_ENDPOINT=opc.tcp://192.168.1.180:49320 \
-  -e KEPWARE_USER=testuser -e KEPWARE_PASS=Password1234567 \
+  -e KEPWARE_USER="$KEPWARE_USER" -e KEPWARE_PASS="$KEPWARE_PASS" \
   dallas-scenario-coordinator:latest
 ```
 
