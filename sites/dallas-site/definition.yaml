@@ -1,8 +1,9 @@
-# Dallas bottling plant - the golden fixture.
-# Expresses the bottling-company-test harness (sites/dallas-site) in the deployment-definition
-# language. TRACEABILITY.md maps every element to the harness file it must regenerate and records
-# every model gap found. Layer files under layers/ are mechanically extracted from the harness
-# catalogs (single-sourced; derived keys stripped) - see TRACEABILITY.md "Extraction".
+# Dallas bottling plant — one topology, deployed to any platform via per-platform profiles.
+# The `topology` is the plant, platform-agnostic (what runs where + each component's functional
+# config). Each entry of `profiles` supplies delivery for one platform. `effective(<profile>)`
+# merges the two into the flat definition the renderers consume. See
+# `docs/platform/DESIGN-deployment-profiles.md`. Layer files under layers/ are single-sourced and
+# shared by every profile.
 apiVersion: edgecommons.io/v1alpha1
 kind: DeploymentDefinition
 metadata:
@@ -27,186 +28,310 @@ hierarchy:
       parent: site/dallas
       layer: layers/scopes/line-packaging-line.json
 
-targetStandard:
-  family: HOST
-  exceptions: []
+# ---------------------------------------------------------------------------------------------
+# Topology — the plant, platform-agnostic. Each component carries its functional half only
+# (catalogKey, layer, messaging, files); delivery (configSource, artifact, launch, image) is a
+# profile's job.
+# ---------------------------------------------------------------------------------------------
+topology:
+  nodes:
+    - key: dallas-console
+      scope: site/dallas
+      identity:
+        thingName: dallas-console
+      components:
+        - name: edge-console
+          catalogKey: EdgeConsole
+          layer: layers/components/site/edge-console.json
+          messaging: { clientId: edge-console, requestTimeoutSeconds: 30, file: console-messaging.json }
 
-environments:
-  - name: local
-    protection: open
-    bindings: bindings/local.json
+    - key: gw-fill-01
+      scope: line/filling-line
+      identity:
+        thingName: gw-fill-01
+      components:
+        - name: opcua-adapter
+          catalogKey: OpcUaAdapter
+          layer: layers/components/filling-line/opcua-adapter.json
+          messaging: { clientId: fill-opcua, type: mqtt, file: opcua-messaging.json }
+        - name: modbus-adapter
+          catalogKey: ModbusAdapter
+          layer: layers/components/filling-line/modbus-adapter.json
+          messaging: { clientId: fill-modbus, type: mqtt, file: modbus-messaging.json }
+        - name: telemetry-processor
+          catalogKey: TelemetryProcessor
+          layer: layers/components/filling-line/telemetry-processor.json
+          files:
+            - { from: "configs/lua/**", to: /scripts }
+          messaging: { clientId: fill-telemetry, file: telemetry-messaging.json }
+        - name: file-replicator
+          catalogKey: FileReplicator
+          layer: layers/components/filling-line/file-replicator.json
+          messaging: { clientId: fill-filerep, file: filerep-messaging.json }
+        - name: uns-bridge
+          catalogKey: UnsBridge
+          layer: layers/components/filling-line/uns-bridge.json
+          messaging: { clientId: fill-bridge-local, requestTimeoutSeconds: 30, file: bridge-messaging.json }
 
-nodes:
-  # ---- Site node: the site bus + console. Attaches at site scope, so its derived catalog
-  # levels are [enterprise, site, device] - exactly what the hand-written site catalog declares.
-  - key: dallas-console
-    scope: site/dallas
-    identity:
-      thingName: dallas-console
-    localBroker:
-      kind: emqx
-      port: 1883
-      env: { HOME: /var/lib/emqx, EMQX_ALLOW_ANONYMOUS: "true" }
-      launch: { order: 10, user: emqx, startSecs: 10, startRetries: 5, stopWaitSecs: 30 }
-    configProvider:
-      configSource: FILE
-      artifact: { source: { kind: sibling, repo: config-component } }
-      layer: layers/provider/config-component.json
-      catalogPath: /config/config-catalog.json
-      versionBase: bottles-r-us-dallas-site
-      messaging: { clientId: site-config-component }
-      launch: { order: 15, waitFor: ["localhost:1883"], startSecs: 5, stopWaitSecs: 15 }
-    components:
-      - name: edge-console
-        catalogKey: EdgeConsole
-        artifact: { source: { kind: sibling, repo: edge-console } }
-        configSource: CONFIG_COMPONENT
-        layer: layers/components/site/edge-console.json
-        messaging: { clientId: edge-console, requestTimeoutSeconds: 30, file: console-messaging.json }
-        launch:
-          order: 20
-          waitFor: ["localhost:1883"]
-          exec: edge-console-gateway
-          workingDir: /app/edge-console
-          env: { MALLOC_ARENA_MAX: "2", EDGECONSOLE_WORKER_THREADS: "4" }
-          startSecs: 5
-          stopWaitSecs: 15
+    - key: gw-pack-01
+      scope: line/packaging-line
+      identity:
+        thingName: gw-pack-01
+      components:
+        - name: opcua-adapter
+          catalogKey: OpcUaAdapter
+          layer: layers/components/packaging-line/opcua-adapter.json
+          messaging: { clientId: pack-opcua, type: mqtt, file: opcua-messaging.json }
+        - name: modbus-adapter
+          catalogKey: ModbusAdapter
+          layer: layers/components/packaging-line/modbus-adapter.json
+          messaging: { clientId: pack-modbus, type: mqtt, file: modbus-messaging.json }
+        - name: telemetry-processor
+          catalogKey: TelemetryProcessor
+          layer: layers/components/packaging-line/telemetry-processor.json
+          files:
+            - { from: "configs/lua/**", to: /scripts }
+          messaging: { clientId: pack-telemetry, file: telemetry-messaging.json }
+        - name: uns-bridge
+          catalogKey: UnsBridge
+          layer: layers/components/packaging-line/uns-bridge.json
+          messaging: { clientId: pack-bridge-local, requestTimeoutSeconds: 30, file: bridge-messaging.json }
 
-  # ---- Filling line gateway: fully self-contained (local field simulator).
-  - key: gw-fill-01
-    scope: line/filling-line
-    identity:
-      thingName: gw-fill-01
-    localBroker:
-      kind: emqx
-      port: 1883
-      env: { HOME: /var/lib/emqx, EMQX_ALLOW_ANONYMOUS: "true" }
-      launch: { order: 10, user: emqx, startSecs: 10, startRetries: 5, stopWaitSecs: 30 }
-    auxiliaries:
-      - name: field-sim
-        command: /opt/simenv/bin/python /opt/sims/dallas_filling_sim.py
-        launch: { order: 20, startSecs: 3 }
-    configProvider:
-      configSource: FILE
-      artifact: { source: { kind: sibling, repo: config-component } }
-      layer: layers/provider/config-component.json
-      catalogPath: /config/config-catalog.json
-      messaging: { clientId: fill-config-component }
-      launch: { order: 25, waitFor: ["localhost:1883"], startSecs: 5, stopWaitSecs: 15 }
-    components:
-      - name: opcua-adapter
-        catalogKey: OpcUaAdapter
-        artifact: { source: { kind: sibling, repo: opcua-adapter } }
-        configSource: CONFIG_COMPONENT
-        layer: layers/components/filling-line/opcua-adapter.json
-        messaging: { clientId: fill-opcua, type: mqtt, file: opcua-messaging.json }
-        launch:
-          order: 30
-          waitFor: ["localhost:1883", "localhost:4840"]
-          settleSeconds: 6
-          exec: java --enable-native-access=ALL-UNNAMED -jar /app/opcua/app.jar
-          startSecs: 8
-          stopWaitSecs: 15
-      - name: modbus-adapter
-        catalogKey: ModbusAdapter
-        artifact: { source: { kind: sibling, repo: modbus-adapter } }
-        configSource: CONFIG_COMPONENT
-        layer: layers/components/filling-line/modbus-adapter.json
-        messaging: { clientId: fill-modbus, type: mqtt, file: modbus-messaging.json }
-        launch:
-          order: 30
-          waitFor: ["localhost:1883", "localhost:5020"]
-          settleSeconds: 6
-          exec: /opt/pyenv/bin/python /app/modbus/main.py
-          workingDir: /app/modbus
-          startSecs: 5
-          stopWaitSecs: 15
-      - name: telemetry-processor
-        catalogKey: TelemetryProcessor
-        artifact:
-          source: { kind: sibling, repo: telemetry-processor, features: [standalone, streaming, streaming-file-parquet, scripting-lua] }
-        configSource: CONFIG_COMPONENT
-        layer: layers/components/filling-line/telemetry-processor.json
-        files:
-          - { from: "configs/lua/**", to: /scripts }
-        messaging: { clientId: fill-telemetry, file: telemetry-messaging.json }
-        launch: { order: 40, waitFor: ["localhost:1883"], settleSeconds: 6, startSecs: 5, stopWaitSecs: 15 }
-      - name: file-replicator
-        catalogKey: FileReplicator
-        artifact:
-          source: { kind: sibling, repo: file-replicator, features: [standalone] }
-        configSource: CONFIG_COMPONENT
-        layer: layers/components/filling-line/file-replicator.json
-        messaging: { clientId: fill-filerep, file: filerep-messaging.json }
-        launch: { order: 50, waitFor: ["localhost:1883"], settleSeconds: 6, startSecs: 5, stopWaitSecs: 15 }
-      - name: uns-bridge
-        catalogKey: UnsBridge
-        artifact: { source: { kind: sibling, repo: uns-bridge } }
-        configSource: CONFIG_COMPONENT
-        layer: layers/components/filling-line/uns-bridge.json
-        messaging: { clientId: fill-bridge-local, requestTimeoutSeconds: 30, file: bridge-messaging.json }
-        launch: { order: 28, waitFor: ["localhost:1883"], settleSeconds: 3, startSecs: 5, stopWaitSecs: 15 }
+    # A second filling-line gateway, deployed by the Greengrass profile (a horizontal-scaling demo
+    # of two per-thing deployments on one line). Its functional config reuses the filling-line
+    # layers; HOST does not deploy it.
+    - key: gw-fill-02
+      scope: line/filling-line
+      identity:
+        thingName: gw-fill-02
+      components:
+        - name: telemetry-processor
+          catalogKey: TelemetryProcessor
+          layer: layers/components/filling-line/telemetry-processor.json
+          messaging: { clientId: fill2-telemetry, file: telemetry-messaging.json }
+        - name: uns-bridge
+          catalogKey: UnsBridge
+          layer: layers/components/filling-line/uns-bridge.json
+          messaging: { clientId: fill2-bridge-local, requestTimeoutSeconds: 30, file: bridge-messaging.json }
 
-  # ---- Packaging line gateway: external PLCs (Kepware OPC UA + host Modbus) via bindings;
-  # no local sims, no file replication.
-  - key: gw-pack-01
-    scope: line/packaging-line
-    identity:
-      thingName: gw-pack-01
-    localBroker:
-      kind: emqx
-      port: 1883
-      env: { HOME: /var/lib/emqx, EMQX_ALLOW_ANONYMOUS: "true" }
-      launch: { order: 10, user: emqx, startSecs: 10, startRetries: 5, stopWaitSecs: 30 }
-    configProvider:
-      configSource: FILE
-      artifact: { source: { kind: sibling, repo: config-component } }
-      layer: layers/provider/config-component.json
-      catalogPath: /run/config/config-catalog.json
-      messaging: { clientId: pack-config-component }
-      launch: { order: 25, waitFor: ["localhost:1883"], startSecs: 5, stopWaitSecs: 15 }
-    components:
-      - name: opcua-adapter
-        catalogKey: OpcUaAdapter
-        artifact: { source: { kind: sibling, repo: opcua-adapter } }
-        configSource: CONFIG_COMPONENT
-        layer: layers/components/packaging-line/opcua-adapter.json
-        messaging: { clientId: pack-opcua, type: mqtt, file: opcua-messaging.json }
-        launch:
-          order: 30
-          waitFor: ["localhost:1883"]
-          settleSeconds: 6
-          exec: java --enable-native-access=ALL-UNNAMED -jar /app/opcua/app.jar
-          startSecs: 8
-          stopWaitSecs: 15
-      - name: modbus-adapter
-        catalogKey: ModbusAdapter
-        artifact: { source: { kind: sibling, repo: modbus-adapter } }
-        configSource: CONFIG_COMPONENT
-        layer: layers/components/packaging-line/modbus-adapter.json
-        messaging: { clientId: pack-modbus, type: mqtt, file: modbus-messaging.json }
-        launch:
-          order: 30
-          waitFor: ["localhost:1883"]
-          settleSeconds: 6
-          exec: /opt/pyenv/bin/python /app/modbus/main.py
-          workingDir: /app/modbus
-          startSecs: 5
-          stopWaitSecs: 15
-      - name: telemetry-processor
-        catalogKey: TelemetryProcessor
-        artifact:
-          source: { kind: sibling, repo: telemetry-processor, features: [standalone, streaming, streaming-file-parquet, scripting-lua] }
-        configSource: CONFIG_COMPONENT
-        layer: layers/components/packaging-line/telemetry-processor.json
-        files:
-          - { from: "configs/lua/**", to: /scripts }
-        messaging: { clientId: pack-telemetry, file: telemetry-messaging.json }
-        launch: { order: 40, waitFor: ["localhost:1883"], settleSeconds: 6, startSecs: 5, stopWaitSecs: 15 }
-      - name: uns-bridge
-        catalogKey: UnsBridge
-        artifact: { source: { kind: sibling, repo: uns-bridge } }
-        configSource: CONFIG_COMPONENT
-        layer: layers/components/packaging-line/uns-bridge.json
-        messaging: { clientId: pack-bridge-local, requestTimeoutSeconds: 30, file: bridge-messaging.json }
-        launch: { order: 28, waitFor: ["localhost:1883"], settleSeconds: 3, startSecs: 5, stopWaitSecs: 15 }
+# ---------------------------------------------------------------------------------------------
+# Profiles — how the topology is delivered on each platform.
+# ---------------------------------------------------------------------------------------------
+profiles:
+  # ---- HOST: supervisord process groups, local EMQX brokers, a FILE config-component provider,
+  # components taking their config through CONFIG_COMPONENT. The full plant except gw-fill-02.
+  host:
+    family: HOST
+    environments:
+      - name: local
+        protection: open
+        bindings: bindings/local.json
+    deploys:
+      nodes: [dallas-console, gw-fill-01, gw-pack-01]
+    defaults:
+      configSource: CONFIG_COMPONENT
+    nodes:
+      dallas-console:
+        localBroker:
+          kind: emqx
+          port: 1883
+          env: { HOME: /var/lib/emqx, EMQX_ALLOW_ANONYMOUS: "true" }
+          launch: { order: 10, user: emqx, startSecs: 10, startRetries: 5, stopWaitSecs: 30 }
+        configProvider:
+          configSource: FILE
+          artifact: { source: { kind: sibling, repo: config-component } }
+          layer: layers/provider/config-component.json
+          catalogPath: /config/config-catalog.json
+          versionBase: bottles-r-us-dallas-site
+          messaging: { clientId: site-config-component }
+          launch: { order: 15, waitFor: ["localhost:1883"], startSecs: 5, stopWaitSecs: 15 }
+        components:
+          edge-console:
+            artifact: { source: { kind: sibling, repo: edge-console } }
+            launch:
+              order: 20
+              waitFor: ["localhost:1883"]
+              exec: edge-console-gateway
+              workingDir: /app/edge-console
+              env: { MALLOC_ARENA_MAX: "2", EDGECONSOLE_WORKER_THREADS: "4" }
+              startSecs: 5
+              stopWaitSecs: 15
+      gw-fill-01:
+        localBroker:
+          kind: emqx
+          port: 1883
+          env: { HOME: /var/lib/emqx, EMQX_ALLOW_ANONYMOUS: "true" }
+          launch: { order: 10, user: emqx, startSecs: 10, startRetries: 5, stopWaitSecs: 30 }
+        auxiliaries:
+          - name: field-sim
+            command: /opt/simenv/bin/python /opt/sims/dallas_filling_sim.py
+            launch: { order: 20, startSecs: 3 }
+        configProvider:
+          configSource: FILE
+          artifact: { source: { kind: sibling, repo: config-component } }
+          layer: layers/provider/config-component.json
+          catalogPath: /config/config-catalog.json
+          messaging: { clientId: fill-config-component }
+          launch: { order: 25, waitFor: ["localhost:1883"], startSecs: 5, stopWaitSecs: 15 }
+        components:
+          opcua-adapter:
+            artifact: { source: { kind: sibling, repo: opcua-adapter } }
+            launch:
+              order: 30
+              waitFor: ["localhost:1883", "localhost:4840"]
+              settleSeconds: 6
+              exec: java --enable-native-access=ALL-UNNAMED -jar /app/opcua/app.jar
+              startSecs: 8
+              stopWaitSecs: 15
+          modbus-adapter:
+            artifact: { source: { kind: sibling, repo: modbus-adapter } }
+            launch:
+              order: 30
+              waitFor: ["localhost:1883", "localhost:5020"]
+              settleSeconds: 6
+              exec: /opt/pyenv/bin/python /app/modbus/main.py
+              workingDir: /app/modbus
+              startSecs: 5
+              stopWaitSecs: 15
+          telemetry-processor:
+            artifact:
+              source: { kind: sibling, repo: telemetry-processor, features: [standalone, streaming, streaming-file-parquet, scripting-lua] }
+            launch: { order: 40, waitFor: ["localhost:1883"], settleSeconds: 6, startSecs: 5, stopWaitSecs: 15 }
+          file-replicator:
+            artifact:
+              source: { kind: sibling, repo: file-replicator, features: [standalone] }
+            launch: { order: 50, waitFor: ["localhost:1883"], settleSeconds: 6, startSecs: 5, stopWaitSecs: 15 }
+          uns-bridge:
+            artifact: { source: { kind: sibling, repo: uns-bridge } }
+            launch: { order: 28, waitFor: ["localhost:1883"], settleSeconds: 3, startSecs: 5, stopWaitSecs: 15 }
+      gw-pack-01:
+        localBroker:
+          kind: emqx
+          port: 1883
+          env: { HOME: /var/lib/emqx, EMQX_ALLOW_ANONYMOUS: "true" }
+          launch: { order: 10, user: emqx, startSecs: 10, startRetries: 5, stopWaitSecs: 30 }
+        configProvider:
+          configSource: FILE
+          artifact: { source: { kind: sibling, repo: config-component } }
+          layer: layers/provider/config-component.json
+          catalogPath: /run/config/config-catalog.json
+          messaging: { clientId: pack-config-component }
+          launch: { order: 25, waitFor: ["localhost:1883"], startSecs: 5, stopWaitSecs: 15 }
+        components:
+          opcua-adapter:
+            artifact: { source: { kind: sibling, repo: opcua-adapter } }
+            launch:
+              order: 30
+              waitFor: ["localhost:1883"]
+              settleSeconds: 6
+              exec: java --enable-native-access=ALL-UNNAMED -jar /app/opcua/app.jar
+              startSecs: 8
+              stopWaitSecs: 15
+          modbus-adapter:
+            artifact: { source: { kind: sibling, repo: modbus-adapter } }
+            launch:
+              order: 30
+              waitFor: ["localhost:1883"]
+              settleSeconds: 6
+              exec: /opt/pyenv/bin/python /app/modbus/main.py
+              workingDir: /app/modbus
+              startSecs: 5
+              stopWaitSecs: 15
+          telemetry-processor:
+            artifact:
+              source: { kind: sibling, repo: telemetry-processor, features: [standalone, streaming, streaming-file-parquet, scripting-lua] }
+            launch: { order: 40, waitFor: ["localhost:1883"], settleSeconds: 6, startSecs: 5, stopWaitSecs: 15 }
+          uns-bridge:
+            artifact: { source: { kind: sibling, repo: uns-bridge } }
+            launch: { order: 28, waitFor: ["localhost:1883"], settleSeconds: 3, startSecs: 5, stopWaitSecs: 15 }
+
+  # ---- GREENGRASS: the COMPLETE plant, each node mapping 1:1 onto a per-thing deployment; every
+  # component takes its config through GG_CONFIG (the native path — no config-component provider, no
+  # local broker, no sims: those are HOST-profile runtime scaffolding). Version+digest pinned, since a
+  # deployment references a published componentVersion. No `deploys` — the whole topology is deployed.
+  greengrass:
+    family: GREENGRASS
+    environments:
+      - name: prod
+        protection: protected
+        bindings: bindings/prod.json
+    defaults:
+      configSource: GG_CONFIG
+    nodes:
+      dallas-console:
+        components:
+          edge-console:
+            artifact: { version: "1.0.0", digest: "sha256:c3d4e5f6a7b8", greengrassName: com.mbreissi.edgecommons.EdgeConsole }
+      gw-fill-01:
+        components:
+          opcua-adapter:
+            artifact: { version: "1.0.0", digest: "sha256:9f1c22aa5d3e", greengrassName: com.mbreissi.edgecommons.OpcUaAdapter }
+          modbus-adapter:
+            artifact: { version: "1.2.0", digest: "sha256:a1b2c3d4e5f6", greengrassName: com.mbreissi.edgecommons.ModbusAdapter }
+          telemetry-processor:
+            artifact: { version: "1.4.2", digest: "sha256:3ab07711cc90", greengrassName: com.mbreissi.edgecommons.TelemetryProcessor }
+          file-replicator:
+            artifact: { version: "1.0.0", digest: "sha256:b2c3d4e5f6a7", greengrassName: com.mbreissi.edgecommons.FileReplicator }
+          uns-bridge:
+            artifact: { version: "1.0.0", digest: "sha256:71d4e0b8af12", greengrassName: com.mbreissi.edgecommons.UnsBridge }
+      gw-pack-01:
+        components:
+          opcua-adapter:
+            artifact: { version: "1.0.0", digest: "sha256:9f1c22aa5d3e", greengrassName: com.mbreissi.edgecommons.OpcUaAdapter }
+          modbus-adapter:
+            artifact: { version: "1.2.0", digest: "sha256:a1b2c3d4e5f6", greengrassName: com.mbreissi.edgecommons.ModbusAdapter }
+          telemetry-processor:
+            artifact: { version: "1.4.2", digest: "sha256:3ab07711cc90", greengrassName: com.mbreissi.edgecommons.TelemetryProcessor }
+          uns-bridge:
+            artifact: { version: "1.0.0", digest: "sha256:71d4e0b8af12", greengrassName: com.mbreissi.edgecommons.UnsBridge }
+      gw-fill-02:
+        components:
+          telemetry-processor:
+            artifact: { version: "1.4.2", digest: "sha256:3ab07711cc90", greengrassName: com.mbreissi.edgecommons.TelemetryProcessor }
+          uns-bridge:
+            artifact: { version: "1.0.0", digest: "sha256:71d4e0b8af12", greengrassName: com.mbreissi.edgecommons.UnsBridge }
+
+  # ---- KUBERNETES: the COMPLETE plant, each component a Deployment + ConfigMap + Service +
+  # ServiceAccount. Config is delivered through CONFIGMAP (mounted as a whole volume so the kubelet
+  # ..data swap hot-reloads it); identity comes from the Downward API. No local brokers or sims:
+  # those are HOST-profile scaffolding. Named-node placement pins each component to its gateway.
+  kubernetes:
+    family: KUBERNETES
+    environments:
+      - name: cluster
+        bindings: bindings/k8s.json
+    defaults:
+      configSource: CONFIGMAP
+    nodes:
+      dallas-console:
+        components:
+          edge-console:
+            image: ghcr.io/edgecommons/edge-console:1.0.0
+      gw-fill-01:
+        components:
+          opcua-adapter:
+            image: ghcr.io/edgecommons/opcua-adapter:1.0.0
+          modbus-adapter:
+            image: ghcr.io/edgecommons/modbus-adapter:1.2.0
+          telemetry-processor:
+            image: ghcr.io/edgecommons/telemetry-processor:1.4.2
+          file-replicator:
+            image: ghcr.io/edgecommons/file-replicator:1.0.0
+          uns-bridge:
+            image: ghcr.io/edgecommons/uns-bridge:1.0.0
+      gw-pack-01:
+        components:
+          opcua-adapter:
+            image: ghcr.io/edgecommons/opcua-adapter:1.0.0
+          modbus-adapter:
+            image: ghcr.io/edgecommons/modbus-adapter:1.2.0
+          telemetry-processor:
+            image: ghcr.io/edgecommons/telemetry-processor:1.4.2
+          uns-bridge:
+            image: ghcr.io/edgecommons/uns-bridge:1.0.0
+      gw-fill-02:
+        components:
+          telemetry-processor:
+            image: ghcr.io/edgecommons/telemetry-processor:1.4.2
+          uns-bridge:
+            image: ghcr.io/edgecommons/uns-bridge:1.0.0

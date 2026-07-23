@@ -30,8 +30,8 @@ edge-console. The filling line is fully self-contained (its OPC UA + Modbus sour
 
 | Path | What it is |
 |------|-----------|
-| `definition.yaml` | **The source of truth.** The `DeploymentDefinition` this site compiles from — its hierarchy, nodes, and which components run where. Everything under `configs/` and `supervisor/` is rendered from this. |
-| `bindings/local.json` | Environment values the definition references by `${binding:…}` (external endpoints — Kepware, the host Modbus sim). The answered half of the IaC handshake. |
+| `definition.yaml` | **The source of truth.** One `DeploymentDefinition` — a shared `topology` (the plant) plus per-platform `profiles` (`host`, `greengrass`, `kubernetes`). This harness runs the **host** profile; the same topology also renders to Greengrass and Kubernetes. Everything under `configs/` and `supervisor/` is the host render's output. |
+| `bindings/{local,prod,k8s}.json` | Per-environment values the definition references by `${binding:…}` (external endpoints — Kepware, the host Modbus sim). `local` answers the host profile; `prod`/`k8s` answer the other profiles. The answered half of the IaC handshake. |
 | `layers/` | The hierarchical config layers the definition merges — per scope (`scopes/`), per component (`components/`), and the config-source provider (`provider/`). |
 | `docker-compose.yml` | The site stack — site node + the two line `edge-node` containers + brokers. |
 | `supervisor/*.conf` | The supervised process set inside each container (`site.conf`, `filling-line.conf`, `packaging-line.conf`). |
