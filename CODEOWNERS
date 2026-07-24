@@ -1,0 +1,26 @@
+# Dallas bottling plant — deployment config ownership.
+#
+# This file is the single source of truth for who must review a change to the Dallas deployment
+# configuration. GitHub enforces it on pull requests; Deployment Studio *renders* it read-only on
+# the Access tab (`studio serve` → Access), so an author can see who a config change will require
+# before opening the PR. The Studio never invents an approval lane — it only surfaces these rules.
+#
+# Rules are last-match-wins, so the site-wide catch-all is narrowed by the more specific lines.
+
+# The whole Dallas site falls to the deployment leads unless a more specific rule applies —
+# this covers definition.yaml, the bindings, and anything not called out below.
+/sites/dallas-site/                                          @bottles-r-us/dallas-deploy-leads
+
+# Scope layers carry the enterprise/site/line context merged into every component; a change here
+# ripples across the plant, so config governance owns them.
+/sites/dallas-site/layers/scopes/                            @bottles-r-us/config-governance
+
+# The config-component provider wiring (how config is delivered on HOST) is platform-owned.
+/sites/dallas-site/layers/provider/                          @bottles-r-us/edge-platform
+
+# Per-line component configuration is owned by that line's controls engineers.
+/sites/dallas-site/layers/components/filling-line/           @bottles-r-us/filling-line-controls
+/sites/dallas-site/layers/components/packaging-line/         @bottles-r-us/packaging-line-controls
+
+# The operator console configuration is owned by the plant-ops UI team.
+/sites/dallas-site/layers/components/site/edge-console.json  @bottles-r-us/plant-ops-ui
