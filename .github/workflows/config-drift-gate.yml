@@ -41,7 +41,9 @@ jobs:
         run: |
           # edgecommons/edgecommons is public — anonymous clone, no token.
           git clone --depth 1 https://github.com/edgecommons/edgecommons.git core
-          cargo install --path core/cli/crates/ec-cli --locked
+          # --force: the cargo bin dir is restored from cache, so a prior run's
+          # `edgecommons` binary is already present; install over it.
+          cargo install --path core/cli/crates/ec-cli --locked --force
           edgecommons --version
 
       - name: Render the definition and diff against the checked-in config sources
