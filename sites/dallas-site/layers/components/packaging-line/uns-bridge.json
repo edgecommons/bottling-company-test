@@ -1,0 +1,64 @@
+{
+  "messaging": {
+    "local": {
+      "host": "localhost",
+      "port": 1883,
+      "clientId": "pack-bridge-local"
+    },
+    "requestTimeoutSeconds": 30
+  },
+  "component": {
+    "token": "uns-bridge",
+    "instances": [
+      {
+        "id": "site",
+        "siteBroker": {
+          "host": "dallas-site",
+          "port": 1883,
+          "clientId": "pack-bridge-site"
+        },
+        "uplink": {
+          "classes": {
+            "state": {
+              "enabled": true
+            },
+            "cfg": {
+              "enabled": true
+            },
+            "evt": {
+              "enabled": true,
+              "bufferWhileDisconnected": {
+                "maxMessages": 1000
+              }
+            },
+            "metric": {
+              "enabled": true,
+              "maxRatePerSec": 50
+            },
+            "data": {
+              "enabled": true,
+              "maxRatePerSec": 200,
+              "burst": 400
+            },
+            "log": {
+              "enabled": true,
+              "maxRatePerSec": 50
+            },
+            "app": {
+              "enabled": false
+            }
+          }
+        },
+        "reply": {
+          "ttlSecs": 60,
+          "maxPending": 1024
+        },
+        "maxHops": 4,
+        "queue": {
+          "data": 512,
+          "default": 64
+        }
+      }
+    ]
+  }
+}

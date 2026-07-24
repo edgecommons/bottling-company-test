@@ -1,0 +1,16 @@
+{
+  "$comment": "The answered half of the IaC handshake for the prod Greengrass environment. The account and region build each node's thing ARN; provisioning the things themselves is infrastructure's job (Terraform/CDK), not the deployment renderer's.",
+  "aws": {
+    "region": "us-east-1",
+    "accountId": "111122223333"
+  },
+  "external": {
+    "kepware": {
+      "endpoint": "opc.tcp://plc-gateway.dallas.internal:49320"
+    },
+    "hostModbus": {
+      "host": "modbus-gateway.dallas.internal",
+      "port": 502
+    }
+  }
+}

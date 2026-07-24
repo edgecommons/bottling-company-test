@@ -1,0 +1,314 @@
+{
+  "logging": {
+    "rust_format": "{timestamp} [{level}] [{component}] {target} - {message}"
+  },
+  "heartbeat": {
+    "intervalSecs": 10,
+    "measures": {
+      "cpu": true,
+      "memory": true,
+      "threads": true,
+      "files": true,
+      "fds": true
+    }
+  },
+  "metricEmission": {
+    "namespace": "edgecommons"
+  },
+  "streaming": {
+    "streams": [
+      {
+        "name": "archive",
+        "sink": {
+          "type": "file",
+          "format": "parquet",
+          "mode": "rows",
+          "dir": "/out/archive",
+          "partitionBy": "dt={yyyy-MM-dd}/hr={HH}",
+          "maxFileBytes": 1048576,
+          "maxFiles": 64,
+          "rollEverySecs": 20,
+          "onFull": "dropOldest",
+          "compression": "snappy",
+          "rows": {
+            "explode": "body.samples",
+            "columns": [
+              {
+                "name": "device",
+                "path": "body.device",
+                "type": "string"
+              },
+              {
+                "name": "component",
+                "path": "body.component",
+                "type": "string"
+              },
+              {
+                "name": "signal",
+                "path": "body.signalName",
+                "type": "string"
+              },
+              {
+                "name": "unit",
+                "path": "body.unit",
+                "type": "string"
+              },
+              {
+                "name": "rawValue",
+                "path": "body.samples[].value",
+                "type": "double"
+              },
+              {
+                "name": "engValue",
+                "path": "body.samples[].engValue",
+                "type": "double"
+              },
+              {
+                "name": "quality",
+                "path": "body.samples[].quality",
+                "type": "string"
+              },
+              {
+                "name": "messageTs",
+                "path": "body.messageTs",
+                "type": "string"
+              },
+              {
+                "name": "serverTs",
+                "path": "body.samples[].server_ts",
+                "type": "string"
+              },
+              {
+                "name": "sourceTs",
+                "path": "body.samples[].source_ts",
+                "type": "string"
+              },
+              {
+                "name": "rate",
+                "path": "body.rate",
+                "type": "double"
+              },
+              {
+                "name": "alarm",
+                "path": "body.alarm",
+                "type": "bool"
+              }
+            ]
+          }
+        },
+        "buffer": {
+          "type": "disk",
+          "path": "/out/.stream-buffer/archive",
+          "segmentBytes": 1048576,
+          "maxDiskBytes": 67108864,
+          "onFull": "dropOldest"
+        },
+        "batch": {
+          "maxRecords": 200,
+          "maxBytes": 1048576,
+          "maxLatencyMs": 2000
+        },
+        "delivery": {
+          "pollIntervalMs": 500
+        }
+      }
+    ]
+  },
+  "component": {
+    "token": "telemetry-processor",
+    "global": {
+      "defaults": {
+        "key": "body.signal.id",
+        "scriptEngine": "lua",
+        "scriptsDir": "/scripts"
+      }
+    },
+    "instances": [
+      {
+        "id": "downsample-local",
+        "subscribe": [
+          "ecv1/+/+/+/data/#"
+        ],
+        "pipeline": [
+          {
+            "filter": {
+              "quality": "GOOD"
+            }
+          },
+          {
+            "sample": {
+              "everyMs": 1000,
+              "by": "body.signal.id"
+            }
+          }
+        ],
+        "target": "local",
+        "publish": {
+          "topic": "ecv1/{ThingName}/telemetry-processor/main/data/{enterprise}/{site}/{line}/downsampled"
+        }
+      },
+      {
+        "id": "archive",
+        "subscribe": [
+          "ecv1/+/+/+/data/#"
+        ],
+        "pipeline": [
+          {
+            "filter": {
+              "quality": "GOOD"
+            }
+          },
+          {
+            "script": {
+              "file": "transform.lua"
+            }
+          }
+        ],
+        "target": "stream:archive",
+        "publish": {
+          "partitionKey": "body.signal.id"
+        }
+      },
+      {
+        "id": "oee-availability",
+        "subscribe": [
+          "ecv1/{ThingName}/opcua-adapter/filler1/data/#"
+        ],
+        "pipeline": [
+          {
+            "filter": {
+              "quality": "GOOD"
+            }
+          },
+          {
+            "filter": {
+              "field": "body.signal.name",
+              "op": "eq",
+              "value": "OeeShiftSnapshot"
+            }
+          },
+          {
+            "sample": {
+              "everyMs": 1000,
+              "by": "body.signal.id"
+            }
+          },
+          {
+            "script": {
+              "file": "oee/availability.lua"
+            }
+          }
+        ],
+        "target": "local",
+        "publish": {
+          "topic": "ecv1/{ThingName}/telemetry-processor/main/data/gemba/oee/availability"
+        }
+      },
+      {
+        "id": "oee-performance",
+        "subscribe": [
+          "ecv1/{ThingName}/opcua-adapter/filler1/data/#"
+        ],
+        "pipeline": [
+          {
+            "filter": {
+              "quality": "GOOD"
+            }
+          },
+          {
+            "filter": {
+              "field": "body.signal.name",
+              "op": "eq",
+              "value": "OeeShiftSnapshot"
+            }
+          },
+          {
+            "sample": {
+              "everyMs": 1000,
+              "by": "body.signal.id"
+            }
+          },
+          {
+            "script": {
+              "file": "oee/performance.lua"
+            }
+          }
+        ],
+        "target": "local",
+        "publish": {
+          "topic": "ecv1/{ThingName}/telemetry-processor/main/data/gemba/oee/performance"
+        }
+      },
+      {
+        "id": "oee-quality",
+        "subscribe": [
+          "ecv1/{ThingName}/opcua-adapter/filler1/data/#"
+        ],
+        "pipeline": [
+          {
+            "filter": {
+              "quality": "GOOD"
+            }
+          },
+          {
+            "filter": {
+              "field": "body.signal.name",
+              "op": "eq",
+              "value": "OeeShiftSnapshot"
+            }
+          },
+          {
+            "sample": {
+              "everyMs": 1000,
+              "by": "body.signal.id"
+            }
+          },
+          {
+            "script": {
+              "file": "oee/quality.lua"
+            }
+          }
+        ],
+        "target": "local",
+        "publish": {
+          "topic": "ecv1/{ThingName}/telemetry-processor/main/data/gemba/oee/quality"
+        }
+      },
+      {
+        "id": "oee-overall",
+        "subscribe": [
+          "ecv1/{ThingName}/opcua-adapter/filler1/data/#"
+        ],
+        "pipeline": [
+          {
+            "filter": {
+              "quality": "GOOD"
+            }
+          },
+          {
+            "filter": {
+              "field": "body.signal.name",
+              "op": "eq",
+              "value": "OeeShiftSnapshot"
+            }
+          },
+          {
+            "sample": {
+              "everyMs": 1000,
+              "by": "body.signal.id"
+            }
+          },
+          {
+            "script": {
+              "file": "oee/oee.lua"
+            }
+          }
+        ],
+        "target": "local",
+        "publish": {
+          "topic": "ecv1/{ThingName}/telemetry-processor/main/data/gemba/oee/overall"
+        }
+      }
+    ]
+  }
+}

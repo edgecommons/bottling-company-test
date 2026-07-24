@@ -1,0 +1,28 @@
+{
+  "tags": {
+    "appId": "bottling-plant",
+    "scenario": "bottling-company-test"
+  },
+  "logging": {
+    "level": "INFO",
+    "publish": {
+      "enabled": true,
+      "destination": "local",
+      "minLevel": "INFO"
+    }
+  },
+  "heartbeat": {
+    "enabled": true,
+    "intervalSecs": 30,
+    "measures": {
+      "cpu": true,
+      "memory": false,
+      "threads": true,
+      "files": true,
+      "fds": true
+    }
+  },
+  "metricEmission": {
+    "target": "messaging"
+  }
+}

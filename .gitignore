@@ -14,3 +14,6 @@ logs/
 .DS_Store
 Thumbs.db
 
+
+# Deployment-render output (regenerated from the definition; never committed).
+sites/*/render/

@@ -1,0 +1,101 @@
+{
+  "messaging": {
+    "local": {
+      "host": "localhost",
+      "port": 1883,
+      "clientId": "edge-console"
+    },
+    "requestTimeoutSeconds": 30
+  },
+  "heartbeat": {
+    "intervalSecs": 5,
+    "measures": {
+      "cpu": true,
+      "memory": true,
+      "threads": true,
+      "files": true,
+      "fds": true
+    }
+  },
+  "component": {
+    "token": "edge-console",
+    "global": {
+      "console": {
+        "ws": {
+          "port": 8443,
+          "bindAddress": "0.0.0.0",
+          "heartbeatIntervalMs": 15000,
+          "webRoot": "/app/edge-console/ui/dist"
+        },
+        "apps": [
+          {
+            "id": "dallas-line-1",
+            "webRoot": "apps/dallas-operations",
+            "allowedOrigins": [
+              "http://127.0.0.1:8080"
+            ],
+            "allowedRoles": [
+              "operator"
+            ],
+            "capabilities": [
+              "signals",
+              "alarms"
+            ]
+          },
+          {
+            "id": "dallas-line-2",
+            "webRoot": "apps/dallas-operations",
+            "allowedOrigins": [
+              "http://127.0.0.1:8080"
+            ],
+            "allowedRoles": [
+              "operator"
+            ],
+            "capabilities": [
+              "signals",
+              "alarms"
+            ]
+          },
+          {
+            "id": "tv-board",
+            "webRoot": "apps/tv-board",
+            "allowedOrigins": [
+              "http://127.0.0.1:8080",
+              "http://192.168.1.224:8080",
+              "file://",
+              "null",
+              "https://google-tv.edgecommons.local"
+            ],
+            "allowedRoles": [
+              "operator"
+            ],
+            "capabilities": [
+              "signals",
+              "alarms"
+            ]
+          }
+        ],
+        "staleness": {
+          "warnMultiplier": 2,
+          "staleMultiplier": 2.5,
+          "offlineMultiplier": 5,
+          "defaultIntervalSecs": 5,
+          "sweepIntervalMs": 1000
+        },
+        "cache": {
+          "maxChannelsPerComponent": 1024
+        },
+        "runtime": {
+          "workerThreads": 4,
+          "mallocArenaMax": 2,
+          "eventBufferCapacity": 512
+        }
+      }
+    },
+    "instances": [
+      {
+        "id": "main"
+      }
+    ]
+  }
+}

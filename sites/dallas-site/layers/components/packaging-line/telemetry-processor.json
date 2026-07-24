@@ -1,0 +1,154 @@
+{
+  "component": {
+    "token": "telemetry-processor",
+    "global": {
+      "defaults": {
+        "key": "body.signal.id",
+        "scriptEngine": "lua",
+        "scriptsDir": "/scripts"
+      }
+    },
+    "instances": [
+      {
+        "id": "oee-availability",
+        "subscribe": [
+          "ecv1/{ThingName}/opcua-adapter/palletizer1/data/#"
+        ],
+        "pipeline": [
+          {
+            "filter": {
+              "quality": "GOOD"
+            }
+          },
+          {
+            "filter": {
+              "field": "body.signal.name",
+              "op": "eq",
+              "value": "OeeShiftSnapshot"
+            }
+          },
+          {
+            "sample": {
+              "everyMs": 1000,
+              "by": "body.signal.id"
+            }
+          },
+          {
+            "script": {
+              "file": "oee/availability.lua"
+            }
+          }
+        ],
+        "target": "local",
+        "publish": {
+          "topic": "ecv1/{ThingName}/telemetry-processor/main/data/gemba/oee/availability"
+        }
+      },
+      {
+        "id": "oee-performance",
+        "subscribe": [
+          "ecv1/{ThingName}/opcua-adapter/palletizer1/data/#"
+        ],
+        "pipeline": [
+          {
+            "filter": {
+              "quality": "GOOD"
+            }
+          },
+          {
+            "filter": {
+              "field": "body.signal.name",
+              "op": "eq",
+              "value": "OeeShiftSnapshot"
+            }
+          },
+          {
+            "sample": {
+              "everyMs": 1000,
+              "by": "body.signal.id"
+            }
+          },
+          {
+            "script": {
+              "file": "oee/performance.lua"
+            }
+          }
+        ],
+        "target": "local",
+        "publish": {
+          "topic": "ecv1/{ThingName}/telemetry-processor/main/data/gemba/oee/performance"
+        }
+      },
+      {
+        "id": "oee-quality",
+        "subscribe": [
+          "ecv1/{ThingName}/opcua-adapter/palletizer1/data/#"
+        ],
+        "pipeline": [
+          {
+            "filter": {
+              "quality": "GOOD"
+            }
+          },
+          {
+            "filter": {
+              "field": "body.signal.name",
+              "op": "eq",
+              "value": "OeeShiftSnapshot"
+            }
+          },
+          {
+            "sample": {
+              "everyMs": 1000,
+              "by": "body.signal.id"
+            }
+          },
+          {
+            "script": {
+              "file": "oee/quality.lua"
+            }
+          }
+        ],
+        "target": "local",
+        "publish": {
+          "topic": "ecv1/{ThingName}/telemetry-processor/main/data/gemba/oee/quality"
+        }
+      },
+      {
+        "id": "oee-overall",
+        "subscribe": [
+          "ecv1/{ThingName}/opcua-adapter/palletizer1/data/#"
+        ],
+        "pipeline": [
+          {
+            "filter": {
+              "quality": "GOOD"
+            }
+          },
+          {
+            "filter": {
+              "field": "body.signal.name",
+              "op": "eq",
+              "value": "OeeShiftSnapshot"
+            }
+          },
+          {
+            "sample": {
+              "everyMs": 1000,
+              "by": "body.signal.id"
+            }
+          },
+          {
+            "script": {
+              "file": "oee/oee.lua"
+            }
+          }
+        ],
+        "target": "local",
+        "publish": {
+          "topic": "ecv1/{ThingName}/telemetry-processor/main/data/gemba/oee/overall"
+        }
+      }
+    ]
+  }
+}

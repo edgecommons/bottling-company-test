@@ -1,9 +1,18 @@
 name: config-drift-gate
-# The Dallas site's configs/ and supervisor/ are GENERATED from the Deployment Studio fixture
-# by the edgecommons deployment renderer, then adopted here. This gate diffs the checked-in files
-# against the renderer's committed golden snapshot in edgecommons/edgecommons, so a hand edit to a
-# generated file fails the PR. To change these files, change the fixture and re-render (see
-# sites/dallas-site/README.md) — never edit them here.
+# The Dallas site's configs/ and supervisor/ are GENERATED from sites/dallas-site/definition.yaml by
+# the edgecommons deployment renderer — the definition (plus its layers/ and bindings/) is the source
+# of truth, and the checked-in config sources are its rendered output. This gate renders the
+# definition here and diffs the result against the checked-in files, so a hand edit to a generated
+# file fails the PR. To change these files, edit the definition and re-render:
+#
+#     edgecommons deployment render sites/dallas-site/definition.yaml --env local --target HOST
+#
+# never edit configs/ or supervisor/ by hand. See sites/dallas-site/README.md.
+#
+# This gate is self-contained: it builds the renderer from the public edgecommons repo and needs no
+# secret. It tracks edgecommons `main` — the renderer is deterministic, so the only thing that moves
+# the output is a definition change or a renderer change, and either should be reflected here. Once
+# the CLI publishes releases (roadmap RM-013), pin this to a released version for reproducibility.
 on:
   push:
     branches: [main]
@@ -14,34 +23,45 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          path: bottling-company-test
 
-      - uses: actions/checkout@v4
-        with:
-          repository: edgecommons/edgecommons
-          token: ${{ secrets.EDGECOMMONS_READ_TOKEN || github.token }}
-          path: edgecommons
-          sparse-checkout: cli/crates/ec-deploy/tests/fixtures/dallas/golden
+      - name: Install Rust toolchain
+        run: rustup toolchain install stable --profile minimal
 
-      - name: Configs must match the generated golden (no hand edits)
+      - name: Cache the built renderer
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin
+          key: edgecommons-cli-${{ runner.os }}
+          restore-keys: edgecommons-cli-${{ runner.os }}
+
+      - name: Build the edgecommons renderer from public core
+        run: |
+          # edgecommons/edgecommons is public — anonymous clone, no token.
+          git clone --depth 1 https://github.com/edgecommons/edgecommons.git core
+          cargo install --path core/cli/crates/ec-cli --locked
+          edgecommons --version
+
+      - name: Render the definition and diff against the checked-in config sources
         run: |
           set -uo pipefail
-          golden=edgecommons/cli/crates/ec-deploy/tests/fixtures/dallas/golden
-          site=bottling-company-test/sites/dallas-site
-          # golden per-node dir -> this site's config subdir (and supervisor conf name)
+          site=sites/dallas-site
+          edgecommons deployment render "$site/definition.yaml" --env local --target HOST --quiet
+          # rendered per-node dir -> this site's config subdir (and supervisor conf name)
           declare -A map=( [dallas-console]=site [gw-fill-01]=filling-line [gw-pack-01]=packaging-line )
           fail=0
           for node in "${!map[@]}"; do
             sub=${map[$node]}
-            for f in "$golden/$node"/*; do
+            for f in "$site/render/host/$node"/*; do
               base=$(basename "$f")
               case "$base" in
                 supervisord.conf) target="$site/supervisor/$sub.conf" ;;
                 *)                 target="$site/configs/$sub/$base" ;;
               esac
               if ! diff --strip-trailing-cr "$f" "$target"; then
-                echo "::error file=$target::drifts from the generated output ($node/$base) — re-render the fixture instead of hand-editing"
+                echo "::error file=$target::drifts from the rendered definition ($node/$base) — re-render instead of hand-editing"
                 fail=1
               fi
             done

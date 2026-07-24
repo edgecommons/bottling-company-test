@@ -1,0 +1,12 @@
+{
+  "$comment": "The answered half of the IaC handshake for the Kubernetes environment. External field sources resolve to in-cluster Service DNS; the packaging line's PLCs are reached through gateway Services in the dallas namespace.",
+  "external": {
+    "kepware": {
+      "endpoint": "opc.tcp://kepware.dallas.svc.cluster.local:49320"
+    },
+    "hostModbus": {
+      "host": "modbus.dallas.svc.cluster.local",
+      "port": 502
+    }
+  }
+}

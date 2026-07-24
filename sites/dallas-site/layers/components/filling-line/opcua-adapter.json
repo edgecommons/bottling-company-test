@@ -1,0 +1,55 @@
+{
+  "metricEmission": {
+    "targetConfig": {
+      "destination": "local"
+    }
+  },
+  "component": {
+    "token": "opcua-adapter",
+    "global": {
+      "defaults": {
+        "publishIntervalMs": 500,
+        "samplingRateMs": 250,
+        "queueSize": 100
+      },
+      "healthThresholds": {
+        "staleSignalSecs": 30
+      }
+    },
+    "instances": [
+      {
+        "id": "filler1",
+        "connection": {
+          "endpoint": "opc.tcp://localhost:4840/",
+          "securityPolicy": "None"
+        },
+        "publish": {
+          "batchMs": 500
+        },
+        "writes": {
+          "allow": [
+            "ns=2;s=Setpoint"
+          ]
+        },
+        "subscriptions": [
+          {
+            "id": "fillhead",
+            "include": [
+              {
+                "namespaceUri": "urn:edgecommons:sim",
+                "match": "^(Sine1|Counter|Line1\\..*)$",
+                "samplingRateMs": 250,
+                "queueSize": 50,
+                "deadband": {
+                  "type": "None",
+                  "value": 0.0
+                }
+              }
+            ],
+            "exclude": []
+          }
+        ]
+      }
+    ]
+  }
+}

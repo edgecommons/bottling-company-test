@@ -1,0 +1,128 @@
+{
+  "component": {
+    "token": "modbus-adapter",
+    "global": {
+      "defaults": {
+        "pollIntervalMs": 500,
+        "publishMode": "always",
+        "batchMs": 0,
+        "maxGap": 4
+      }
+    },
+    "instances": [
+      {
+        "id": "conveyor1",
+        "connection": {
+          "transport": "tcp",
+          "host": "localhost",
+          "port": 5020,
+          "unitId": 1,
+          "timeoutMs": 1000
+        },
+        "publish": {
+          "batchMs": 0
+        },
+        "write": {
+          "enabled": false
+        },
+        "pollGroups": [
+          {
+            "id": "main",
+            "pollIntervalMs": 500,
+            "publishMode": "always",
+            "signals": [
+              {
+                "name": "BottleCount",
+                "table": "holding",
+                "address": 0,
+                "type": "uint16"
+              },
+              {
+                "name": "ProductTemp",
+                "table": "holding",
+                "address": 1,
+                "type": "float32"
+              },
+              {
+                "name": "FillLevel",
+                "table": "holding",
+                "address": 40,
+                "type": "uint16",
+                "scale": 0.1
+              },
+              {
+                "name": "GoodBottleCount",
+                "table": "holding",
+                "address": 50,
+                "type": "uint32"
+              },
+              {
+                "name": "RejectCount",
+                "table": "holding",
+                "address": 52,
+                "type": "uint32"
+              },
+              {
+                "name": "UnderfillRejectCount",
+                "table": "holding",
+                "address": 54,
+                "type": "uint32"
+              },
+              {
+                "name": "OverfillRejectCount",
+                "table": "holding",
+                "address": 56,
+                "type": "uint32"
+              },
+              {
+                "name": "CapRejectCount",
+                "table": "holding",
+                "address": 58,
+                "type": "uint32"
+              },
+              {
+                "name": "ConveyorSpeedPct",
+                "table": "holding",
+                "address": 60,
+                "type": "uint16",
+                "scale": 0.1
+              },
+              {
+                "name": "BowlLevelPct",
+                "table": "holding",
+                "address": 61,
+                "type": "uint16",
+                "scale": 0.1
+              },
+              {
+                "name": "ProductTempC",
+                "table": "holding",
+                "address": 62,
+                "type": "int16",
+                "scale": 0.1
+              },
+              {
+                "name": "ConveyorRunning",
+                "table": "discrete",
+                "address": 0,
+                "type": "bool"
+              },
+              {
+                "name": "InfeedStarved",
+                "table": "discrete",
+                "address": 1,
+                "type": "bool"
+              },
+              {
+                "name": "EStopHealthy",
+                "table": "discrete",
+                "address": 2,
+                "type": "bool"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

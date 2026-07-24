@@ -1,0 +1,12 @@
+{
+  "heartbeat": {
+    "intervalSecs": 15,
+    "measures": {
+      "cpu": true,
+      "memory": true,
+      "threads": true,
+      "files": true,
+      "fds": true
+    }
+  }
+}
