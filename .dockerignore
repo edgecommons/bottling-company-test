@@ -50,6 +50,11 @@ edge-console/proto
 **/.git/
 **/.idea/
 **/.vscode/
+# Agent scratch space in EVERY sibling repo. This is not just clutter: `.claude/worktrees/`
+# holds git worktrees — whole extra checkouts, each with its own `target/`, and on Windows
+# junctions/symlinks — anywhere under the umbrella. A single one of those in a sibling repo
+# breaks the build context (or silently multiplies its size), so exclude the tree outright.
+**/.claude/
 
 # The harness's own runtime output (must never enter an image)
 bottling-company-test/replicated-output/
