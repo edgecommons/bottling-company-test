@@ -154,10 +154,12 @@ each component — using the same local-sibling build pattern proven in `system-
 BuildKit resolves the ignore file as `<dockerfile>.dockerignore` first, so an identical copy of
 `.dockerignore` ships next to each Dockerfile
 (`dockerfiles/{edge-node,site}.Dockerfile.dockerignore`, generated from the canonical
-`.dockerignore`). That keeps the multi-GB `target/ node_modules/ dist/ .git/` trees — and the
-sibling `system-test/` (with its committed Parquet fixtures) — out of the context **without**
+`.dockerignore`). That keeps the multi-GB `target/ node_modules/ dist/ .git/ .claude/` trees — and
+the sibling `system-test/` (with its committed Parquet fixtures) — out of the context **without**
 writing into the umbrella root, while re-including the TS lib's `src/**/target/` **source** dirs
-(`!**/src/**/target/`) that the console build needs.
+(`!**/src/**/target/`) that the console build needs. `**/.claude/` matters beyond clutter: it holds
+agent git worktrees — whole extra checkouts, each with its own `target/` and, on Windows, junctions
+— in any sibling repo, and one of those inside the context breaks the build.
 
 ### EMQX everywhere
 
