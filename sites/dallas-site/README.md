@@ -20,9 +20,10 @@ repository [`README.md`](../../README.md); this page explains the site's own lay
   dallas-filling-sim (in-container)      KepWare + host Modbus sim (LAN)
 ```
 
-Each line device runs its adapters, a telemetry-processor, a file-replicator, and a `uns-bridge` that
-relays the device-local bus up to the site broker; the site node runs the config-component and the
-edge-console. The filling line is fully self-contained (its OPC UA + Modbus sources are the in-container
+Each line device runs its adapters, a telemetry-processor, a config-component and a `uns-bridge`
+that relays the device-local bus up to the site broker. Only the filling line runs file-replicator.
+The site node runs a broker, config-component and edge-console. The filling line is fully self-contained
+(its OPC UA + Modbus sources are the in-container
 [`dallas-filling-sim`](../../sims/dallas-filling-sim/README.md)); the packaging line reaches LAN sources
 (KepWare + the host [`dallas-packaging-modbus`](../../sims/dallas-packaging-modbus/README.md) sim).
 
@@ -30,14 +31,14 @@ edge-console. The filling line is fully self-contained (its OPC UA + Modbus sour
 
 | Path | What it is |
 |------|-----------|
-| `definition.yaml` | **The source of truth.** One `DeploymentDefinition` — a shared `topology` (the plant) plus per-platform `profiles` (`host`, `greengrass`, `kubernetes`). This harness runs the **host** profile; the same topology also renders to Greengrass and Kubernetes. Everything under `configs/` and `supervisor/` is the host render's output. |
+| `definition.yaml` | **The source of truth.** One `DeploymentDefinition` — a shared `topology` (the plant) plus per-platform `profiles` (`host`, `greengrass`, `kubernetes`). This harness runs the **host** profile; the same topology also renders to Greengrass and Kubernetes. Device configs and supervisor files are the host render's output; `configs/lua/` is authored source. |
 | `bindings/{local,prod,k8s}.json` | Per-environment values the definition references by `${binding:…}` (external endpoints — Kepware, the host Modbus sim). `local` answers the host profile; `prod`/`k8s` answer the other profiles. The answered half of the IaC handshake. |
 | `layers/` | The hierarchical config layers the definition merges — per scope (`scopes/`), per component (`components/`), and the config-source provider (`provider/`). |
 | `docker-compose.yml` | The site stack — site node + the two line `edge-node` containers + brokers. |
 | `supervisor/*.conf` | The supervised process set inside each container (`site.conf`, `filling-line.conf`, `packaging-line.conf`). |
 | `configs/site/` | Site node: the config-component catalog + `console-messaging.json` (the console's broker binding). |
 | `configs/filling-line/` | `config-catalog.json` (the components that run on `gw-fill-01`) plus each component's `*-messaging.json` (opcua, modbus, telemetry, file-replicator, uns-bridge, config-component). |
-| `configs/packaging-line/` | `config-catalog.tmpl.json` (templated) + the packaging components' messaging configs. |
+| `configs/packaging-line/` | Rendered static `config-catalog.json` + the packaging components' messaging configs. |
 | `configs/lua/transform.lua` | The telemetry-processor's per-signal transform (device, signal, unit, rawValue, engValue, rate, alarm, …). |
 | `configs/lua/oee/` | The OEE route: `availability.lua`, `performance.lua`, `quality.lua`, `oee.lua`. |
 
@@ -51,10 +52,10 @@ console and the TV boards to render. The filling line derives these from the sim
 
 ## Config catalogs
 
-A line's `config-catalog*.json` is the list of components the device runs and the config each is given —
-it is the single place that determines what runs on `gw-fill-01` vs `gw-pack-01`. Editing which adapter
-reads which source, or which line publishes which signals, happens here (and in the referenced
-`*-messaging.json` files), not in the component images. See the repository README's
+A line's rendered `config-catalog.json` is the config served to the components on that device.
+The authored `definition.yaml`, `layers/` and `bindings/` determine the component set, source
+endpoints and signal configuration. Edit those inputs and regenerate the catalogs, messaging
+configs and supervisor files together. See the repository README's
 [config semantics](../../README.md#note-on-hierarchical-config-semantics) note.
 
 ## Run
@@ -69,10 +70,11 @@ edge-console and the native Android TV Line 01 board; see the end-to-end
 
 ## Generated configuration — do not hand-edit
 
-Everything under `configs/` and `supervisor/` is **rendered** from `definition.yaml` (plus its
+Device configuration and `supervisor/` files are **rendered** from `definition.yaml` (plus its
 `layers/` and `bindings/local.json`) by the `edgecommons` deployment renderer. The definition is the
 source of truth; the config sources are its output. A hand edit to a generated file is drift, and the
 `config-drift-gate` workflow catches it on every PR by rendering the definition and diffing.
+The scripts under `configs/lua/` are authored source and remain outside this generated output set.
 
 To change anything here — endpoints, components, config values, start order — edit the definition or
 its layers (external endpoints live in `bindings/local.json`), then re-render in place:
